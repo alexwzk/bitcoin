@@ -10,6 +10,11 @@
 #include "serialize.h"
 #include "uint256.h"
 
+// Added for PoRLottery
+#include "PoRLottery/common.h"
+#include "PoRLottery/fps.h"
+#include "PoRLottery/ticket.h"
+
 #include <stdint.h>
 
 class CTransaction;
@@ -446,12 +451,26 @@ public:
     }
 };
 
+/* JUST AN ILLUSTRATION, PLEASE REMOVE */
+typedef struct {
+    int data[40];
+    IMPLEMENT_SERIALIZE 
+    (
+     for (int i = 0; i < 40; i++)
+         READWRITE(data[i]);
+     )
+} int40;
 
 class CBlock : public CBlockHeader
 {
 public:
     // network and disk
     std::vector<CTransaction> vtx;
+
+    // network and disk (PoRLottery added)
+    std::string ticket;
+    std::vector<std::string> final_sig;
+    int40 intdata;
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
@@ -471,6 +490,9 @@ public:
     (
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
+        READWRITE(ticket);
+        READWRITE(final_sig);
+        READWRITE(intdata);
     )
 
     void SetNull()
