@@ -11,10 +11,11 @@
 #include "uint256.h"
 
 // Added for PoRLottery
+/*
 #include "PoRLottery/common.h"
 #include "PoRLottery/fps.h"
 #include "PoRLottery/ticket.h"
-
+*/
 #include <stdint.h>
 
 class CTransaction;
