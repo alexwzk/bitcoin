@@ -11,7 +11,7 @@
 
 class CBlockIndex;
 class CBlockHeader;
-class uint256;
+class uint256;	//Zikai Q: why are the classes declared beforehand?
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock);
 

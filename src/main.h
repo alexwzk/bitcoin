@@ -647,6 +647,7 @@ public:
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
+    uint256 hashTicket;	//TODO PMC needs to add the hash of reward signatures (rm the data under conf. folder)
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
@@ -671,6 +672,7 @@ public:
 
         nVersion       = 0;
         hashMerkleRoot = 0;
+        hashTicket	   = 0;
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
@@ -687,6 +689,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
+        hashTicket	   = block.hashTicket;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -717,6 +720,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
+        block.hashTicket	 = hashTicket;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -764,9 +768,10 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, ticket=%s, hashBlock=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
+			hashTicket.ToString(),
             GetBlockHash().ToString());
     }
 
@@ -834,6 +839,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
+        READWRITE(hashTicket);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -845,6 +851,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
+        block.hashTicket	  = hashTicket;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

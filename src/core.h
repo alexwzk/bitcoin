@@ -11,11 +11,9 @@
 #include "uint256.h"
 
 // Added for PoRLottery
-/*
-#include "PoRLottery/common.h"
 #include "PoRLottery/fps.h"
 #include "PoRLottery/ticket.h"
-*/
+
 #include <stdint.h>
 
 class CTransaction;
@@ -409,6 +407,7 @@ public:
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
+    uint256 hashTicket;	//TODO PMC needs to add the hash of reward signatures
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
@@ -424,6 +423,7 @@ public:
         nVersion = this->nVersion;
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
+        READWRITE(hashTicket);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -434,6 +434,7 @@ public:
         nVersion = CBlockHeader::CURRENT_VERSION;
         hashPrevBlock = 0;
         hashMerkleRoot = 0;
+        hashTicket = 0;
         nTime = 0;
         nBits = 0;
         nNonce = 0;
@@ -452,16 +453,6 @@ public:
     }
 };
 
-/* JUST AN ILLUSTRATION, PLEASE REMOVE */
-typedef struct {
-    int data[40];
-    IMPLEMENT_SERIALIZE 
-    (
-     for (int i = 0; i < 40; i++)
-         READWRITE(data[i]);
-     )
-} int40;
-
 class CBlock : public CBlockHeader
 {
 public:
@@ -469,9 +460,8 @@ public:
     std::vector<CTransaction> vtx;
 
     // network and disk (PoRLottery added)
-    std::string ticket;
-    std::vector<std::string> final_sig;
-    int40 intdata;
+    TICKET<RUN_PMCLFBYTE,RUN_FPSLFBYTE> ticket;
+    std::vector< PATH<RUN_PMCLFBYTE> > vsigns;
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
@@ -492,15 +482,16 @@ public:
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
         READWRITE(ticket);
-        READWRITE(final_sig);
-        READWRITE(intdata);
-    )
+        READWRITE(vsigns);
+     )
 
     void SetNull()
     {
         CBlockHeader::SetNull();
         vtx.clear();
         vMerkleTree.clear();
+        ticket.clear();
+        vsigns.clear();
     }
 
     CBlockHeader GetBlockHeader() const
@@ -509,6 +500,7 @@ public:
         block.nVersion       = nVersion;
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
+        block.hashTicket	 = hashTicket;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
