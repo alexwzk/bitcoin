@@ -77,8 +77,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-unknown-linux-gnu
-host_triplet = x86_64-unknown-linux-gnu
+build_triplet = x86_64-apple-darwin14.0.0
+host_triplet = x86_64-apple-darwin14.0.0
 am__append_1 = -I$(srcdir)/leveldb/include \
 	-I$(srcdir)/leveldb/helpers/memenv
 am__append_2 = $(builddir)/leveldb/libleveldb.a
@@ -156,7 +156,7 @@ am__append_22 = $(CLEAN_BITCOIN_TEST)
 #  qt/walletmodeltransaction.cpp \
 #  qt/walletview.cpp
 
-##am__append_26 = $(BITCOIN_MM)
+#am__append_26 = $(BITCOIN_MM)
 ##am__append_27 = $(BITCOIN_RC)
 #am__append_28 = $(LIBBITCOIN_WALLET)
 ##am__append_29 = secp256k1/libsecp256k1.la
@@ -270,7 +270,7 @@ am__libbitcoin_util_a_SOURCES_DIST = compat/glibc_sanity.cpp \
 	addrman.h alert.h allocators.h base58.h bloom.h chainparams.h \
 	chainparamsbase.h chainparamsseeds.h checkpoints.h \
 	checkqueue.h clientversion.h coincontrol.h coins.h compat.h \
-	core.h core_io.h crypter.h db.h hash.h init.h key.h keystore.h \
+    core.h core_io.h crypter.h db.h hash.h init.h key.h keystore.h \
 	leveldbwrapper.h limitedmap.h main.h miner.h mruset.h \
 	netbase.h net.h noui.h pow.h protocol.h random.h rpcclient.h \
 	rpcprotocol.h rpcserver.h script.h serialize.h sync.h \
@@ -590,8 +590,8 @@ am__qt_bitcoin_qt_SOURCES_DIST = qt/bitcoin.cpp \
 #am__objects_11 =  \
 #	qt/qt_bitcoin_qt-macdockiconhandler.$(OBJEXT) \
 #	qt/qt_bitcoin_qt-macnotificationhandler.$(OBJEXT)
-##am__objects_12 =  \
-##	$(am__objects_11)
+#am__objects_12 =  \
+#	$(am__objects_11)
 #am__objects_13 = qt/res/bitcoin-qt-res.$(OBJEXT)
 ##am__objects_14 =  \
 ##	$(am__objects_13)
@@ -804,7 +804,8 @@ AM_V_CCLD = $(am__v_CCLD_$(V))
 am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) \
+SOURCES = \
+    $(crypto_libbitcoin_crypto_a_SOURCES) \
 	$(libbitcoin_cli_a_SOURCES) $(libbitcoin_common_a_SOURCES) \
 	$(libbitcoin_server_a_SOURCES) $(libbitcoin_util_a_SOURCES) \
 	$(nodist_libbitcoin_util_a_SOURCES) \
@@ -817,7 +818,8 @@ SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) \
 	$(nodist_qt_test_test_bitcoin_qt_SOURCES) \
 	$(test_test_bitcoin_SOURCES) \
 	$(nodist_test_test_bitcoin_SOURCES)
-DIST_SOURCES = $(crypto_libbitcoin_crypto_a_SOURCES) \
+DIST_SOURCES = \
+    $(crypto_libbitcoin_crypto_a_SOURCES) \
 	$(libbitcoin_cli_a_SOURCES) $(libbitcoin_common_a_SOURCES) \
 	$(libbitcoin_server_a_SOURCES) \
 	$(am__libbitcoin_util_a_SOURCES_DIST) \
@@ -1059,26 +1061,26 @@ TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/src/build-aux/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing aclocal-1.14
+ACLOCAL = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing aclocal-1.14
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing autoconf
-AUTOHEADER = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing autoheader
-AUTOMAKE = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing automake-1.14
-AWK = mawk
-BDB_CPPFLAGS = 
+AUTOCONF = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing automake-1.14
+AWK = awk
+BDB_CPPFLAGS =  -I/opt/local/include/db48/
 BDB_LIBS = -ldb_cxx-4.8
-BOOST_CHRONO_LIB = -lboost_chrono
-BOOST_CPPFLAGS = -pthread -I/usr/include
-BOOST_FILESYSTEM_LIB = -lboost_filesystem
-BOOST_LDFLAGS = -L/usr/lib/x86_64-linux-gnu
-BOOST_LIBS = -L/usr/lib/x86_64-linux-gnu -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread -lboost_chrono
-BOOST_PROGRAM_OPTIONS_LIB = -lboost_program_options
-BOOST_SYSTEM_LIB = -lboost_system
-BOOST_THREAD_LIB = -lboost_thread
-BOOST_UNIT_TEST_FRAMEWORK_LIB = -lboost_unit_test_framework
-BREW = 
+BOOST_CHRONO_LIB = -lboost_chrono-mt
+BOOST_CPPFLAGS = -pthread -I/opt/local/include
+BOOST_FILESYSTEM_LIB = -lboost_filesystem-mt
+BOOST_LDFLAGS = -L/opt/local/lib
+BOOST_LIBS = -L/opt/local/lib -lboost_system-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_thread-mt -lboost_chrono-mt
+BOOST_PROGRAM_OPTIONS_LIB = -lboost_program_options-mt
+BOOST_SYSTEM_LIB = -lboost_system-mt
+BOOST_THREAD_LIB = -lboost_thread-mt
+BOOST_UNIT_TEST_FRAMEWORK_LIB = -lboost_unit_test_framework-mt
+BREW = brew
 BUILD_QT = 
 BUILD_TEST = test
 BUILD_TEST_QT = 
@@ -1094,30 +1096,30 @@ CLIENT_VERSION_REVISION = 99
 COMPARISON_TOOL_REORG_TESTS = 0
 COPYRIGHT_YEAR = 2014
 CPP = gcc -E
-CPPFLAGS =  -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS  -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
-CRYPTO_CFLAGS =  
-CRYPTO_LIBS = -lcrypto  
+CPPFLAGS =  -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -isystem /opt/local/include -I/opt/local/include/db48 -I/usr/local/opt/berkeley-db4/include -DMAC_OSX  -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+CRYPTO_CFLAGS = -I/opt/local/include 
+CRYPTO_LIBS = -L/opt/local/lib -lcrypto 
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -g3 -O0 -DDEBUG -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter  -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden -std=c++11
+CXXFLAGS = -g3 -O0 -DDEBUG -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter  -Wstack-protector -fstack-protector-all -fPIE -fvisibility=hidden
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = false
-DSYMUTIL = 
+DSYMUTIL = dsymutil
 DUMPBIN = 
-ECHO_C = 
-ECHO_N = -n
+ECHO_C = \c
+ECHO_N = 
 ECHO_T = 
-EGREP = /bin/grep -E
+EGREP = /usr/bin/grep -E
 EXEEXT = 
-FGREP = /bin/grep -F
+FGREP = /usr/bin/grep -F
 GCOV = /usr/bin/gcov
 GENHTML = 
 GENISOIMAGE = 
 GIT = /usr/bin/git
-GREP = /bin/grep
+GREP = /usr/bin/grep
 HEXDUMP = /usr/bin/hexdump
 INSTALL = /usr/bin/install -c
 INSTALLNAMETOOL = 
@@ -1128,40 +1130,40 @@ INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 JAVA = /usr/bin/java
 JAVA_COMPARISON_TOOL = 
 LCOV = 
-LD = /usr/bin/ld -m elf_x86_64
-LDFLAGS =   -Wl,-z,relro -Wl,-z,now -pie
+LD = /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
+LDFLAGS =   -pie -Wl,-dead_strip
 LEVELDB_CPPFLAGS =  $(am__append_1)
-LEVELDB_TARGET_FLAGS = 
+LEVELDB_TARGET_FLAGS = TARGET_OS=Darwin
 LIBLEVELDB =  $(am__append_2)
 LIBMEMENV =  $(am__append_3)
 LIBOBJS = 
-LIBS = -lanl 
+LIBS = -lminiupnpc -lminiupnpc -lminiupnpc -lminiupnpc  -L/opt/local/lib -L/opt/local/lib/db48
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIBTOOL_LDFLAGS = 
-LIPO = 
+LIPO = lipo
 LN_S = ln -s
 LRELEASE = 
 LTLIBOBJS = 
 LUPDATE = 
 MAINT = 
-MAKEINFO = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing makeinfo
+MAKEINFO = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing makeinfo
 MAKENSIS = 
 MANIFEST_TOOL = :
-MKDIR_P = /bin/mkdir -p
+MKDIR_P = ../src/build-aux/install-sh -c -d
 MOC = 
 MOC_DEFS = -DHAVE_CONFIG_H -I$(srcdir)
-NM = /usr/bin/nm -B
-NMEDIT = 
+NM = /usr/bin/nm
+NMEDIT = nmedit
 OBJC = gcc
 OBJCDEPMODE = depmode=gcc3
-OBJCFLAGS = 
+OBJCFLAGS = -g -O2
 OBJCXX = g++
 OBJCXXDEPMODE = depmode=gcc3
 OBJCXXFLAGS = -g3 -O0 -DDEBUG -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter  -Wstack-protector -fstack-protector-all -fPIE
-OBJDUMP = objdump
+OBJDUMP = false
 OBJEXT = o
-OTOOL = 
-OTOOL64 = 
+OTOOL = otool
+OTOOL64 = :
 PACKAGE = bitcoin
 PACKAGE_BUGREPORT = info@bitcoin.org
 PACKAGE_NAME = Bitcoin Core
@@ -1170,15 +1172,15 @@ PACKAGE_TARNAME = bitcoin
 PACKAGE_URL = 
 PACKAGE_VERSION = 0.9.99
 PATH_SEPARATOR = :
-PKG_CONFIG = /usr/bin/pkg-config
+PKG_CONFIG = /opt/local/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
-PKG_CONFIG_PATH = 
-PORT = 
+PKG_CONFIG_PATH = /usr/local/Cellar/openssl/1.0.1j/lib/pkgconfig:
+PORT = port
 PROTOBUF_CFLAGS = 
 PROTOBUF_LIBS = 
 PROTOC = 
 PTHREAD_CC = gcc
-PTHREAD_CFLAGS = -pthread
+PTHREAD_CFLAGS = -D_THREAD_SAFE -pthread
 PTHREAD_LIBS = 
 QR_CFLAGS = 
 QR_LIBS = 
@@ -1200,12 +1202,12 @@ QT_TEST_LIBS =
 QT_TRANSLATION_DIR = 
 RANLIB = /usr/bin/ranlib
 RCC = 
-RELDFLAGS = -Wl,--exclude-libs,ALL
-SED = /bin/sed
+RELDFLAGS = 
+SED = /usr/bin/sed
 SET_MAKE = 
-SHELL = /bin/bash
-SSL_CFLAGS =  
-SSL_LIBS = -lssl -lcrypto  
+SHELL = /bin/sh
+SSL_CFLAGS = -I/opt/local/include 
+SSL_LIBS = -L/opt/local/lib -lssl -lcrypto 
 STRIP = /usr/bin/strip
 TESTDEFS =  -DBOOST_TEST_DYN_LINK
 UIC = 
@@ -1216,11 +1218,11 @@ WINDOWS_BITS =
 WINDRES = 
 X11XCB_CFLAGS = 
 X11XCB_LIBS = 
-XGETTEXT = /usr/bin/xgettext
-abs_builddir = /home/alexwen/Documents/bitcoin/src
-abs_srcdir = /home/alexwen/Documents/bitcoin/src
-abs_top_builddir = /home/alexwen/Documents/bitcoin
-abs_top_srcdir = /home/alexwen/Documents/bitcoin
+XGETTEXT = /opt/local/bin/xgettext
+abs_builddir = /Users/zkwen/Documents/PMC/Permacoin/src
+abs_srcdir = /Users/zkwen/Documents/PMC/Permacoin/src
+abs_top_builddir = /Users/zkwen/Documents/PMC/Permacoin
+abs_top_srcdir = /Users/zkwen/Documents/PMC/Permacoin
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -1234,26 +1236,26 @@ am__tar = $${TAR-tar} chof - "$$tardir"
 am__untar = $${TAR-tar} xf -
 ax_pthread_config = 
 bindir = ${exec_prefix}/bin
-build = x86_64-unknown-linux-gnu
+build = x86_64-apple-darwin14.0.0
 build_alias = 
 build_cpu = x86_64
-build_os = linux-gnu
-build_vendor = unknown
+build_os = darwin14.0.0
+build_vendor = apple
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = x86_64-unknown-linux-gnu
+host = x86_64-apple-darwin14.0.0
 host_alias = 
 host_cpu = x86_64
-host_os = linux-gnu
-host_vendor = unknown
+host_os = darwin14.0.0
+host_vendor = apple
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/install-sh
+install_sh = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -1290,6 +1292,11 @@ noinst_LIBRARIES = libbitcoin_server.a libbitcoin_common.a \
 	libbitcoin_cli.a libbitcoin_util.a \
 	univalue/libbitcoin_univalue.a crypto/libbitcoin_crypto.a \
 	$(am__append_6) $(am__append_24)
+
+#Zikai added Permacoin directory#
+PMCDIR = /Users/zkwen/Dropbox/WorkSpace/Cpp/PoRLottery/src
+
+
 # bitcoin core #
 BITCOIN_CORE_H = \
   addrman.h \
@@ -1345,7 +1352,9 @@ BITCOIN_CORE_H = \
   version.h \
   walletdb.h \
   wallet.h \
-  compat/sanity.h
+  compat/sanity.h \
+ # $(permacoin_CORE_H) #Zikai added Permacoin h files into core.h
+
 
 JSON_H = \
   json/json_spirit.h \
@@ -2728,6 +2737,19 @@ libbitcoin_common_a-coins.obj: coins.cpp
 #	$(AM_V_CXX)source='coins.cpp' object='libbitcoin_common_a-coins.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libbitcoin_common_a-coins.obj `if test -f 'coins.cpp'; then $(CYGPATH_W) 'coins.cpp'; else $(CYGPATH_W) '$(srcdir)/coins.cpp'; fi`
+
+#libbitcoin_common_a-pmc.o: $(PMCDIR)/pmc.cpp
+#	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libbitcoin_common_a-pmc.o -MD -MP -MF -c -o libbitcoin_common_a-pmc.o `test -f 'pmc.cpp' || echo '$(PMCDIR)/'`pmc.cpp
+#	$(AM_V_CXX)source='chainparams.cpp' object='libbitcoin_common_a-chainparams.o' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libbitcoin_common_a-chainparams.o `test -f 'chainparams.cpp' || echo '$(srcdir)/'`chainparams.cpp
+
+#libbitcoin_common_a-pmc.obj: $(PMCDIR)/pmc.cpp
+#	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libbitcoin_common_a-pmc.obj -MD -MP -MF -c -o libbitcoin_common_a-pmc.obj `if test -f 'pmc.cpp'; then $(CYGPATH_W) 'pmc.cpp'; else $(CYGPATH_W) '$(PMCDIR)/pmc.cpp'; fi`
+#	$(AM_V_at)$(am__mv) $(DEPDIR)/libbitcoin_common_a-pmc.Tpo $(DEPDIR)/libbitcoin_common_a-pmc.Po
+#	$(AM_V_CXX)source='chainparams.cpp' object='libbitcoin_common_a-chainparams.obj' libtool=no \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libbitcoin_common_a-chainparams.obj `if test -f 'chainparams.cpp'; then $(CYGPATH_W) 'chainparams.cpp'; else $(CYGPATH_W) '$(srcdir)/chainparams.cpp'; fi`
 
 libbitcoin_common_a-core.o: core.cpp
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbitcoin_common_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libbitcoin_common_a-core.o -MD -MP -MF $(DEPDIR)/libbitcoin_common_a-core.Tpo -c -o libbitcoin_common_a-core.o `test -f 'core.cpp' || echo '$(srcdir)/'`core.cpp

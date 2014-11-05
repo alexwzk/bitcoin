@@ -75,8 +75,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-unknown-linux-gnu
-host_triplet = x86_64-unknown-linux-gnu
+build_triplet = x86_64-apple-darwin14.0.0
+host_triplet = x86_64-apple-darwin14.0.0
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) \
@@ -222,26 +222,26 @@ distuninstallcheck_listfiles = find . -type f -print
 am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing aclocal-1.14
+ACLOCAL = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing aclocal-1.14
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 0
 AR = /usr/bin/ar
-AUTOCONF = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing autoconf
-AUTOHEADER = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing autoheader
-AUTOMAKE = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing automake-1.14
-AWK = mawk
-BDB_CPPFLAGS = 
+AUTOCONF = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing autoconf
+AUTOHEADER = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing autoheader
+AUTOMAKE = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing automake-1.14
+AWK = awk
+BDB_CPPFLAGS =  -I/opt/local/include/db48/
 BDB_LIBS = -ldb_cxx-4.8
-BOOST_CHRONO_LIB = -lboost_chrono
-BOOST_CPPFLAGS = -pthread -I/usr/include
-BOOST_FILESYSTEM_LIB = -lboost_filesystem
-BOOST_LDFLAGS = -L/usr/lib/x86_64-linux-gnu
-BOOST_LIBS = -L/usr/lib/x86_64-linux-gnu -lboost_system -lboost_filesystem -lboost_program_options -lboost_thread -lboost_chrono
-BOOST_PROGRAM_OPTIONS_LIB = -lboost_program_options
-BOOST_SYSTEM_LIB = -lboost_system
-BOOST_THREAD_LIB = -lboost_thread
-BOOST_UNIT_TEST_FRAMEWORK_LIB = -lboost_unit_test_framework
-BREW = 
+BOOST_CHRONO_LIB = -lboost_chrono-mt
+BOOST_CPPFLAGS = -pthread -I/opt/local/include
+BOOST_FILESYSTEM_LIB = -lboost_filesystem-mt
+BOOST_LDFLAGS = -L/opt/local/lib
+BOOST_LIBS = -L/opt/local/lib -lboost_system-mt -lboost_filesystem-mt -lboost_program_options-mt -lboost_thread-mt -lboost_chrono-mt
+BOOST_PROGRAM_OPTIONS_LIB = -lboost_program_options-mt
+BOOST_SYSTEM_LIB = -lboost_system-mt
+BOOST_THREAD_LIB = -lboost_thread-mt
+BOOST_UNIT_TEST_FRAMEWORK_LIB = -lboost_unit_test_framework-mt
+BREW = brew
 BUILD_QT = 
 BUILD_TEST = test
 BUILD_TEST_QT = 
@@ -257,9 +257,9 @@ CLIENT_VERSION_REVISION = 99
 COMPARISON_TOOL_REORG_TESTS = 0
 COPYRIGHT_YEAR = 2014
 CPP = gcc -E
-CPPFLAGS =  -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS  -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
-CRYPTO_CFLAGS =  
-CRYPTO_LIBS = -lcrypto  
+CPPFLAGS =  -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS -isystem /opt/local/include -I/opt/local/include/db48 -I/usr/local/Cellar/berkeley-db4/4.8.30/include -DMAC_OSX  -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+CRYPTO_CFLAGS = -I/opt/local/include 
+CRYPTO_LIBS = -L/opt/local/lib -lcrypto 
 CXX = g++
 CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
@@ -268,19 +268,19 @@ CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
 DLLTOOL = false
-DSYMUTIL = 
+DSYMUTIL = dsymutil
 DUMPBIN = 
-ECHO_C = 
-ECHO_N = -n
+ECHO_C = \c
+ECHO_N = 
 ECHO_T = 
-EGREP = /bin/grep -E
+EGREP = /usr/bin/grep -E
 EXEEXT = 
-FGREP = /bin/grep -F
+FGREP = /usr/bin/grep -F
 GCOV = /usr/bin/gcov
 GENHTML = 
 GENISOIMAGE = 
 GIT = /usr/bin/git
-GREP = /bin/grep
+GREP = /usr/bin/grep
 HEXDUMP = /usr/bin/hexdump
 INSTALL = /usr/bin/install -c
 INSTALLNAMETOOL = 
@@ -291,40 +291,40 @@ INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 JAVA = /usr/bin/java
 JAVA_COMPARISON_TOOL = 
 LCOV = 
-LD = /usr/bin/ld -m elf_x86_64
-LDFLAGS =   -Wl,-z,relro -Wl,-z,now -pie
+LD = /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
+LDFLAGS =   -pie -Wl,-dead_strip
 LEVELDB_CPPFLAGS = 
-LEVELDB_TARGET_FLAGS = 
+LEVELDB_TARGET_FLAGS = TARGET_OS=Darwin
 LIBLEVELDB = 
 LIBMEMENV = 
 LIBOBJS = 
-LIBS = -lanl 
+LIBS = -lminiupnpc -lminiupnpc -lminiupnpc -lminiupnpc  -L/opt/local/lib -L/opt/local/lib/db48 -L/usr/local/Cellar/berkeley-db4/4.8.30/lib
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIBTOOL_LDFLAGS = 
-LIPO = 
+LIPO = lipo
 LN_S = ln -s
 LRELEASE = 
 LTLIBOBJS = 
 LUPDATE = 
 MAINT = 
-MAKEINFO = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/missing makeinfo
+MAKEINFO = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/missing makeinfo
 MAKENSIS = 
 MANIFEST_TOOL = :
-MKDIR_P = /bin/mkdir -p
+MKDIR_P = src/build-aux/install-sh -c -d
 MOC = 
 MOC_DEFS = -DHAVE_CONFIG_H -I$(srcdir)
-NM = /usr/bin/nm -B
-NMEDIT = 
+NM = /usr/bin/nm
+NMEDIT = nmedit
 OBJC = gcc
 OBJCDEPMODE = depmode=gcc3
-OBJCFLAGS = 
+OBJCFLAGS = -g -O2
 OBJCXX = g++
 OBJCXXDEPMODE = depmode=gcc3
 OBJCXXFLAGS = -g3 -O0 -DDEBUG -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter  -Wstack-protector -fstack-protector-all -fPIE
-OBJDUMP = objdump
+OBJDUMP = false
 OBJEXT = o
-OTOOL = 
-OTOOL64 = 
+OTOOL = otool
+OTOOL64 = :
 PACKAGE = bitcoin
 PACKAGE_BUGREPORT = info@bitcoin.org
 PACKAGE_NAME = Bitcoin Core
@@ -333,15 +333,15 @@ PACKAGE_TARNAME = bitcoin
 PACKAGE_URL = 
 PACKAGE_VERSION = 0.9.99
 PATH_SEPARATOR = :
-PKG_CONFIG = /usr/bin/pkg-config
+PKG_CONFIG = /opt/local/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
-PKG_CONFIG_PATH = 
-PORT = 
+PKG_CONFIG_PATH = /usr/local/Cellar/openssl/1.0.1j/lib/pkgconfig:
+PORT = port
 PROTOBUF_CFLAGS = 
 PROTOBUF_LIBS = 
 PROTOC = 
 PTHREAD_CC = gcc
-PTHREAD_CFLAGS = -pthread
+PTHREAD_CFLAGS = -D_THREAD_SAFE -pthread
 PTHREAD_LIBS = 
 QR_CFLAGS = 
 QR_LIBS = 
@@ -363,12 +363,12 @@ QT_TEST_LIBS =
 QT_TRANSLATION_DIR = 
 RANLIB = /usr/bin/ranlib
 RCC = 
-RELDFLAGS = -Wl,--exclude-libs,ALL
-SED = /bin/sed
+RELDFLAGS = 
+SED = /usr/bin/sed
 SET_MAKE = 
-SHELL = /bin/bash
-SSL_CFLAGS =  
-SSL_LIBS = -lssl -lcrypto  
+SHELL = /bin/sh
+SSL_CFLAGS = -I/opt/local/include 
+SSL_LIBS = -L/opt/local/lib -lssl -lcrypto 
 STRIP = /usr/bin/strip
 TESTDEFS =  -DBOOST_TEST_DYN_LINK
 UIC = 
@@ -379,11 +379,11 @@ WINDOWS_BITS =
 WINDRES = 
 X11XCB_CFLAGS = 
 X11XCB_LIBS = 
-XGETTEXT = /usr/bin/xgettext
-abs_builddir = /home/alexwen/Documents/bitcoin
-abs_srcdir = /home/alexwen/Documents/bitcoin
-abs_top_builddir = /home/alexwen/Documents/bitcoin
-abs_top_srcdir = /home/alexwen/Documents/bitcoin
+XGETTEXT = /opt/local/bin/xgettext
+abs_builddir = /Users/zkwen/Documents/PMC/Permacoin
+abs_srcdir = /Users/zkwen/Documents/PMC/Permacoin
+abs_top_builddir = /Users/zkwen/Documents/PMC/Permacoin
+abs_top_srcdir = /Users/zkwen/Documents/PMC/Permacoin
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
@@ -397,26 +397,26 @@ am__tar = $${TAR-tar} chof - "$$tardir"
 am__untar = $${TAR-tar} xf -
 ax_pthread_config = 
 bindir = ${exec_prefix}/bin
-build = x86_64-unknown-linux-gnu
+build = x86_64-apple-darwin14.0.0
 build_alias = 
 build_cpu = x86_64
-build_os = linux-gnu
-build_vendor = unknown
+build_os = darwin14.0.0
+build_vendor = apple
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = x86_64-unknown-linux-gnu
+host = x86_64-apple-darwin14.0.0
 host_alias = 
 host_cpu = x86_64
-host_os = linux-gnu
-host_vendor = unknown
+host_os = darwin14.0.0
+host_vendor = apple
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/alexwen/Documents/bitcoin/src/build-aux/install-sh
+install_sh = ${SHELL} /Users/zkwen/Documents/PMC/Permacoin/src/build-aux/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -1003,19 +1003,19 @@ $(OSX_APP)/Contents/MacOS/Bitcoin-Qt: $(BITCOIN_QT_BIN)
 	$(MKDIR_P) $(@D)
 	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM)  $< $@
 
-#$(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING)
-#	$(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -dmg -fancy $(OSX_FANCY_PLIST) -verbose 2
-
 $(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING)
-	INSTALLNAMETOOL=$(INSTALLNAMETOOL)  OTOOL=$(OTOOL) STRIP=$(STRIP) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -verbose 2
-	$(MKDIR_P) dist/.background
-	$(INSTALL) contrib/macdeploy/background.png dist/.background
-	$(INSTALL) contrib/macdeploy/DS_Store dist/.DS_Store
-	cd dist; $(LN_S) /Applications Applications
-	$(GENISOIMAGE) -no-cache-inodes -l -probe -V "Bitcoin-Qt" -no-pad -r -apple -o $@ dist
+	$(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -dmg -fancy $(OSX_FANCY_PLIST) -verbose 2
 
-#appbundle: $(OSX_APP_BUILT)
-#deploy: $(OSX_DMG)
+#$(OSX_DMG): $(OSX_APP_BUILT) $(OSX_PACKAGING)
+#	INSTALLNAMETOOL=$(INSTALLNAMETOOL)  OTOOL=$(OTOOL) STRIP=$(STRIP) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) -add-qt-tr $(OSX_QT_TRANSLATIONS) -translations-dir=$(QT_TRANSLATION_DIR) -verbose 2
+#	$(MKDIR_P) dist/.background
+#	$(INSTALL) contrib/macdeploy/background.png dist/.background
+#	$(INSTALL) contrib/macdeploy/DS_Store dist/.DS_Store
+#	cd dist; $(LN_S) /Applications Applications
+#	$(GENISOIMAGE) -no-cache-inodes -l -probe -V "Bitcoin-Qt" -no-pad -r -apple -o $@ dist
+
+appbundle: $(OSX_APP_BUILT)
+deploy: $(OSX_DMG)
 #deploy: $(BITCOIN_WIN_INSTALLER)
 
 $(BITCOIN_QT_BIN): FORCE
