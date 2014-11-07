@@ -2324,6 +2324,53 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     return true;
 }
 
+bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTicket){
+	size_t r_i = 0, challenges = 0;
+	uint256 hashvalue;
+	std::list<size_t> unrevealed_v;
+	std::string prefix, inputs;
+	PATH< RUN_FPSLFBYTE > init_sign;
+	const PATH< RUN_FPSLFBYTE > *signaturePt = NULL;
+
+	challenges = block.ticket.mkproofs.size();
+	for (size_t i = 0; i < RUN_FPSLFNUM; i++) {
+			unrevealed_v.push_back(i);
+	}
+	prefix = itostr(block.nVersion) + block.hashPrevBlock.ToString() + block.hashMerkleRoot.ToString() + \
+			itostr(block.nTime) + block.ticket.pubkey.ToString();
+	inputs = prefix + block.ticket.seedToString();
+
+	//intialize sigma_0 (empty signature) and r_0
+	signaturePt = &init_sign;
+	r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+
+	//TODO How to calculate k? should be set by nBits
+	challenges = CHALNG_CONST;
+
+	//TODO Check if operator= works ( passing values )
+	for(size_t i = 0; i < challenges; i++){
+		//puz || pk || sigma_{i-1} || F[r_i]
+		inputs = prefix + signaturePt->toString() + block.ticket.mkproofs[r_i].returnLeaf().toString();
+
+		hashvalue = Hash(inputs.begin(),inputs.end());
+
+		//Verification
+		fCheckTicket &= FPS< RUN_FPSLFBYTE >::verifySignature(block.ticket.signatures[i], hashvalue, block.ticket.pubkey, unrevealed_v);
+		fCheckTicket &= MERKLE< RUN_PMCLFBYTE >::verifyPath(block.ticket.mkproofs[i], r_i, PMC::db_rootdigest);
+		if(!fCheckTicket){
+		       return state.DoS(50, error("CheckLocalPoR() : proof of retrievability failed"),
+		                         REJECT_INVALID, "broken-storage");
+		}
+
+		//Compute r_{i+1}
+		signaturePt = &block.ticket.signatures[i];
+		inputs = prefix + signaturePt->toString();
+		r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+	}
+
+	return fCheckTicket;
+}
+
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
     // Check proof of work matches claimed amount
@@ -2339,15 +2386,13 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     return true;
 }
 
-bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bool fCheckMerkleRoot)
+bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckTicket, bool fCheckSignatures)
 {
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.
 
     if (!CheckBlockHeader(block, state, fCheckPOW))
         return false;
-
-    
 
     // Size limits
     if (block.vtx.empty() || block.vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
@@ -2391,6 +2436,11 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     if (fCheckMerkleRoot && block.hashMerkleRoot != block.BuildMerkleTree())
         return state.DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"),
                          REJECT_INVALID, "bad-txnmrklroot", true);
+
+    // Local-PoR Lottery
+    if(!CheckLocalPoR(block,state,fCheckTicket)){
+    	return false;
+    }
 
     return true;
 }

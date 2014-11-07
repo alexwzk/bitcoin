@@ -35,6 +35,8 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
+# Added for Permacoin
+LIBPOR=PoRLottery/libpor.a
 
 noinst_LIBRARIES = \
   libbitcoin_server.a \
@@ -42,7 +44,8 @@ noinst_LIBRARIES = \
   libbitcoin_cli.a \
   libbitcoin_util.a \
   univalue/libbitcoin_univalue.a \
-  crypto/libbitcoin_crypto.a
+  crypto/libbitcoin_crypto.a \
+  PoRLottery/libpor.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 noinst_LIBRARIES += libbitcoin_wallet.a
@@ -128,6 +131,14 @@ JSON_H = \
   json/json_spirit_writer.h \
   json/json_spirit_writer_template.h
 
+PERMACOIN_CORE_H = \
+  PoRLottery/common.h \
+  PoRLottery/buffer.h \
+  PoRLottery/path.h   \
+  PoRLottery/ticket.h \
+  PoRLottery/merkle.h \
+  PoRLottery/fps.h 
+
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh $(abs_top_builddir)/src/obj/build.h \
@@ -157,6 +168,7 @@ libbitcoin_server_a_SOURCES = \
   timedata.cpp \
   txdb.cpp \
   txmempool.cpp \
+  $(PERMACOIN_CORE_H) \
   $(JSON_H) \
   $(BITCOIN_CORE_H)
 
@@ -170,6 +182,18 @@ libbitcoin_wallet_a_SOURCES = \
   rpcwallet.cpp \
   wallet.cpp \
   walletdb.cpp \
+  $(BITCOIN_CORE_H)
+
+# permacoin: shared between bitcoind and bitcoin-qt
+PoRLottery_libpor_a_CPPFLAGS = $(BITCOIN_INCLUDES)
+PoRLottery_libpor_a_SOURCES = \
+  PoRLottery/buffer.cpp \
+  PoRLottery/common.cpp \
+  PoRLottery/fps.cpp    \
+  PoRLottery/merkle.cpp \
+  PoRLottery/path.cpp   \
+  PoRLottery/ticket.cpp \
+  $(PERMACOIN_CORE_H) \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
@@ -250,7 +274,8 @@ bitcoind_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
-  $(LIBMEMENV)
+  $(LIBMEMENV) \
+  $(LIBPOR)
 
 if USE_LIBSECP256K1
   bitcoind_LDADD += secp256k1/libsecp256k1.la
@@ -294,7 +319,7 @@ bitcoin_tx_LDADD = \
   $(LIBBITCOIN_UNIVALUE) \
   $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO)
+  $(LIBBITCOIN_CRYPTO) 
 
 if USE_LIBSECP256K1
   bitcoin_tx_LDADD += secp256k1/libsecp256k1.la

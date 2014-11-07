@@ -85,6 +85,7 @@ public:
         genesis.hashPrevBlock = 0;
         genesis.hashMerkleRoot = genesis.BuildMerkleTree();
         genesis.hashTicket = genesis.ticket.getHash();
+        genesis.hashRewardSig = Hash(genesis.vsignreward.begin(),genesis.vsignreward.end());
         genesis.nVersion = 1;
         genesis.nTime    = 1231006505;
         genesis.nBits    = 0x1d00ffff;
@@ -96,7 +97,6 @@ public:
         //do mining on top of the genesis black which doesn't hv the correct hash root
         cout << genesis.ToString() << endl;
 
-//        assert(hashGenesisBlock == uint256("0xa60c593223a4ce6b94dcb57c99c91e623a2a9f7a50aefe27646831b21104a247"));
 //        assert(genesis.hashMerkleRoot == uint256("0x7cf62ee5d07f08183a688854b9faca11b1615c2366a324063da5e9a77b05ac7a"));
 
         vSeeds.push_back(CDNSSeedData("bitcoin.sipa.be", "seed.bitcoin.sipa.be"));

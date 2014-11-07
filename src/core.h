@@ -10,9 +10,8 @@
 #include "serialize.h"
 #include "uint256.h"
 
-// Added for PoRLottery
-#include "PoRLottery/fps.h"
 #include "PoRLottery/ticket.h"
+#include "PoRLottery/fps.h"
 
 #include <stdint.h>
 
@@ -407,8 +406,9 @@ public:
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
-    uint256 hashTicket;	//TODO PMC needs to add the hash of reward signatures
     unsigned int nTime;
+    uint256 hashTicket;
+    uint256 hashRewardSig;
     unsigned int nBits;
     unsigned int nNonce;
 
@@ -424,6 +424,7 @@ public:
         READWRITE(hashPrevBlock);
         READWRITE(hashMerkleRoot);
         READWRITE(hashTicket);
+        READWRITE(hashRewardSig);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -435,6 +436,7 @@ public:
         hashPrevBlock = 0;
         hashMerkleRoot = 0;
         hashTicket = 0;
+        hashRewardSig = 0;
         nTime = 0;
         nBits = 0;
         nNonce = 0;
@@ -460,8 +462,8 @@ public:
     std::vector<CTransaction> vtx;
 
     // network and disk (PoRLottery added)
-    TICKET<RUN_PMCLFBYTE,RUN_FPSLFBYTE> ticket;
-    std::vector< PATH<RUN_PMCLFBYTE> > vsigns;
+    TICKET< RUN_PMCLFBYTE, RUN_FPSLFBYTE > ticket;
+    std::vector< PATH< RUN_FPSLFBYTE > > vsignreward;
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
@@ -482,7 +484,7 @@ public:
         READWRITE(*(CBlockHeader*)this);
         READWRITE(vtx);
         READWRITE(ticket);
-        READWRITE(vsigns);
+        READWRITE(vsignreward);
      )
 
     void SetNull()
@@ -491,7 +493,7 @@ public:
         vtx.clear();
         vMerkleTree.clear();
         ticket.clear();
-        vsigns.clear();
+        vsignreward.clear();
     }
 
     CBlockHeader GetBlockHeader() const
@@ -501,6 +503,7 @@ public:
         block.hashPrevBlock  = hashPrevBlock;
         block.hashMerkleRoot = hashMerkleRoot;
         block.hashTicket	 = hashTicket;
+        block.hashRewardSig  = hashRewardSig;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;

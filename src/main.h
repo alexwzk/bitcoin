@@ -20,6 +20,11 @@
 #include "txmempool.h"
 #include "uint256.h"
 
+#include "PoRLottery/common.h"
+#include "PoRLottery/path.h"
+#include "PoRLottery/fps.h"
+#include "PoRLottery/ticket.h"
+
 #include <algorithm>
 #include <exception>
 #include <map>
@@ -523,8 +528,9 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 bool AddToBlockIndex(CBlock& block, CValidationState& state, const CDiskBlockPos& pos);
 
 // Context-independent validity checks
+bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTicket = true);
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW = true);
-bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW = true, bool fCheckMerkleRoot = true, bool fCheckTicket = true, bool fCheckSignatures = true);
 
 // Store block on disk
 // if dbp is provided, the file is known to already reside on disk
@@ -647,7 +653,8 @@ public:
     // block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashTicket;	//TODO PMC needs to add the hash of reward signatures (rm the data under conf. folder)
+    uint256 hashTicket;
+    uint256 hashRewardSig;
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
@@ -673,6 +680,7 @@ public:
         nVersion       = 0;
         hashMerkleRoot = 0;
         hashTicket	   = 0;
+        hashRewardSig  = 0;
         nTime          = 0;
         nBits          = 0;
         nNonce         = 0;
@@ -690,6 +698,7 @@ public:
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
         hashTicket	   = block.hashTicket;
+        hashRewardSig  = block.hashRewardSig;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -721,6 +730,7 @@ public:
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
         block.hashTicket	 = hashTicket;
+        block.hashRewardSig  = hashRewardSig;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -768,10 +778,11 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, ticket=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, ticket=%s, (k+1)th reward=%s, hashBlock=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
 			hashTicket.ToString(),
+			hashRewardSig.ToString(),
             GetBlockHash().ToString());
     }
 
@@ -840,6 +851,7 @@ public:
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
         READWRITE(hashTicket);
+        READWRITE(hashRewardSig);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -852,6 +864,7 @@ public:
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
         block.hashTicket	  = hashTicket;
+        block.hashRewardSig   = hashRewardSig;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
