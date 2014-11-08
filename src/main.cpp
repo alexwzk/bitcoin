@@ -2391,6 +2391,11 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     // These are checks that are independent of context
     // that can be verified before saving an orphan block.
 
+    // Local-PoR Lottery
+    if(!CheckLocalPoR(block,state,fCheckTicket)){
+    	return false;
+    }
+
     if (!CheckBlockHeader(block, state, fCheckPOW))
         return false;
 
@@ -2436,11 +2441,6 @@ bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW, bo
     if (fCheckMerkleRoot && block.hashMerkleRoot != block.BuildMerkleTree())
         return state.DoS(100, error("CheckBlock() : hashMerkleRoot mismatch"),
                          REJECT_INVALID, "bad-txnmrklroot", true);
-
-    // Local-PoR Lottery
-    if(!CheckLocalPoR(block,state,fCheckTicket)){
-    	return false;
-    }
 
     return true;
 }
@@ -3029,7 +3029,7 @@ bool static LoadBlockIndexDB()
 
     // Check whether we have a transaction index
     pblocktree->ReadFlag("txindex", fTxIndex);
-    LogPrintf("LoadBlockIndexDB(): transaction index %s\n", fTxIndex ? "enabled" : "disabled");
+    LogPrintf("LoadBlockIndexDB(): transaction index %s\n", fTxIndex ? "enabled" : "disabled");  //TODO Check here is this normal?
 
     // Load pointer to end of best chain
     std::map<uint256, CBlockIndex*>::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());

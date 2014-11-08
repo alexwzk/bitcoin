@@ -947,7 +947,7 @@ bool AppInit2(boost::thread_group& threadGroup)
                     pblocktree->WriteReindexing(true);
 
                 if (!LoadBlockIndex()) {
-                    strLoadError = _("Error loading block database"); //TODO Ziaki C: This is where it goes wrong.
+                    strLoadError = _("Error loading block database");
                     break;
                 }
 

@@ -20,11 +20,6 @@
 #include "txmempool.h"
 #include "uint256.h"
 
-#include "PoRLottery/common.h"
-#include "PoRLottery/path.h"
-#include "PoRLottery/fps.h"
-#include "PoRLottery/ticket.h"
-
 #include <algorithm>
 #include <exception>
 #include <map>
