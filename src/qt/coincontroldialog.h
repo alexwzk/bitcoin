@@ -2,8 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef COINCONTROLDIALOG_H
-#define COINCONTROLDIALOG_H
+#ifndef BITCOIN_QT_COINCONTROLDIALOG_H
+#define BITCOIN_QT_COINCONTROLDIALOG_H
+
+#include "amount.h"
 
 #include <QAbstractButton>
 #include <QAction>
@@ -14,12 +16,14 @@
 #include <QString>
 #include <QTreeWidgetItem>
 
+class WalletModel;
+
+class CCoinControl;
+class CTxMemPool;
+
 namespace Ui {
     class CoinControlDialog;
 }
-class WalletModel;
-class CCoinControl;
-class CTxMemPool;
 
 class CoinControlDialog : public QDialog
 {
@@ -35,7 +39,7 @@ public:
     static void updateLabels(WalletModel*, QDialog*);
     static QString getPriorityLabel(const CTxMemPool& pool, double);
 
-    static QList<qint64> payAmounts;
+    static QList<CAmount> payAmounts;
     static CCoinControl *coinControl;
 
 private:
@@ -120,4 +124,4 @@ private slots:
     void updateLabelLocked();
 };
 
-#endif // COINCONTROLDIALOG_H
+#endif // BITCOIN_QT_COINCONTROLDIALOG_H

@@ -2,14 +2,18 @@
 // Copyright (c) 2009-2013 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #ifndef BITCOIN_TXMEMPOOL_H
 #define BITCOIN_TXMEMPOOL_H
 
 #include <list>
 
+#include "amount.h"
 #include "coins.h"
-#include "core.h"
+#include "core/transaction.h"
 #include "sync.h"
+
+class CAutoFile;
 
 inline bool AllowFree(double dPriority)
 {
@@ -28,27 +32,41 @@ class CTxMemPoolEntry
 {
 private:
     CTransaction tx;
-    int64_t nFee; // Cached to avoid expensive parent-transaction lookups
+    CAmount nFee; // Cached to avoid expensive parent-transaction lookups
     size_t nTxSize; // ... and avoid recomputing tx size
+    size_t nModSize; // ... and modified size for priority
     int64_t nTime; // Local time when entering the mempool
     double dPriority; // Priority when entering the mempool
     unsigned int nHeight; // Chain height when entering the mempool
 
 public:
-    CTxMemPoolEntry(const CTransaction& _tx, int64_t _nFee,
+    CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                     int64_t _nTime, double _dPriority, unsigned int _nHeight);
     CTxMemPoolEntry();
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
     const CTransaction& GetTx() const { return this->tx; }
     double GetPriority(unsigned int currentHeight) const;
-    int64_t GetFee() const { return nFee; }
+    CAmount GetFee() const { return nFee; }
     size_t GetTxSize() const { return nTxSize; }
     int64_t GetTime() const { return nTime; }
     unsigned int GetHeight() const { return nHeight; }
 };
 
 class CMinerPolicyEstimator;
+
+/** An inpoint - a combination of a transaction and an index n into its vin */
+class CInPoint
+{
+public:
+    const CTransaction* ptx;
+    uint32_t n;
+
+    CInPoint() { SetNull(); }
+    CInPoint(const CTransaction* ptxIn, uint32_t nIn) { ptx = ptxIn; n = nIn; }
+    void SetNull() { ptx = NULL; n = (uint32_t) -1; }
+    bool IsNull() const { return (ptx == NULL && n == (uint32_t) -1); }
+};
 
 /*
  * CTxMemPool stores valid-according-to-the-current-best-chain
@@ -74,7 +92,7 @@ public:
     mutable CCriticalSection cs;
     std::map<uint256, CTxMemPoolEntry> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
-    std::map<uint256, std::pair<double, int64_t> > mapDeltas;
+    std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
     CTxMemPool(const CFeeRate& _minRelayFee);
     ~CTxMemPool();
@@ -100,8 +118,8 @@ public:
     void AddTransactionsUpdated(unsigned int n);
 
     /** Affect CreateNewBlock prioritisation of transactions */
-    void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, int64_t nFeeDelta);
-    void ApplyDeltas(const uint256 hash, double &dPriorityDelta, int64_t &nFeeDelta);
+    void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, const CAmount& nFeeDelta);
+    void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta);
     void ClearPrioritisation(const uint256 hash);
 
     unsigned long size()
@@ -142,9 +160,9 @@ protected:
     CTxMemPool &mempool;
 
 public:
-    CCoinsViewMemPool(CCoinsView &baseIn, CTxMemPool &mempoolIn);
+    CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
 };
 
-#endif /* BITCOIN_TXMEMPOOL_H */
+#endif // BITCOIN_TXMEMPOOL_H

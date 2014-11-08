@@ -3,14 +3,15 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "rpcserver.h"
+#include "amount.h"
 #include "chainparams.h"
+#include "core_io.h"
 #include "init.h"
 #include "net.h"
 #include "main.h"
 #include "miner.h"
 #include "pow.h"
-#include "core_io.h"
+#include "rpcserver.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
 #include "db.h"
@@ -239,7 +240,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("networkhashps",    getnetworkhashps(params, false)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
-    obj.push_back(Pair("testnet",          Params().NetworkID() == CBaseChainParams::TESTNET));
+    obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_WALLET
     obj.push_back(Pair("generate",         getgenerate(params, false)));
@@ -273,7 +274,7 @@ Value prioritisetransaction(const Array& params, bool fHelp)
     uint256 hash;
     hash.SetHex(params[0].get_str());
 
-    int64_t nAmount = 0;
+    CAmount nAmount = 0;
     if (params[2].get_real() != 0.0)
         nAmount = AmountFromValue(params[2]);
 
@@ -526,6 +527,24 @@ Value getblocktemplate(const Array& params, bool fHelp)
     return result;
 }
 
+class submitblock_StateCatcher : public CValidationInterface
+{
+public:
+    uint256 hash;
+    bool found;
+    CValidationState state;
+
+    submitblock_StateCatcher(const uint256 &hashIn) : hash(hashIn), found(false), state() {};
+
+protected:
+    virtual void BlockChecked(const CBlock& block, const CValidationState& stateIn) {
+        if (block.GetHash() != hash)
+            return;
+        found = true;
+        state = stateIn;
+    };
+};
+
 Value submitblock(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -553,14 +572,33 @@ Value submitblock(const Array& params, bool fHelp)
     try {
         ssBlock >> pblock;
     }
-    catch (std::exception &e) {
+    catch (const std::exception &) {
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
 
     CValidationState state;
-    bool fAccepted = ProcessBlock(state, NULL, &pblock);
-    if (!fAccepted)
-        return "rejected"; // TODO: report validation state
+    submitblock_StateCatcher sc(pblock.GetHash());
+    RegisterValidationInterface(&sc);
+    bool fAccepted = ProcessNewBlock(state, NULL, &pblock);
+    UnregisterValidationInterface(&sc);
+    if (fAccepted)
+    {
+        if (!sc.found)
+            return "inconclusive";
+        state = sc.state;
+    }
+    if (state.IsError())
+    {
+        std::string strRejectReason = state.GetRejectReason();
+        throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
+    }
+    if (state.IsInvalid())
+    {
+        std::string strRejectReason = state.GetRejectReason();
+        if (strRejectReason.empty())
+            return "rejected";
+        return strRejectReason;
+    }
 
     return Value::null;
 }

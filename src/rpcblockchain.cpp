@@ -54,9 +54,11 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex)
 {
     Object result;
     result.push_back(Pair("hash", block.GetHash().GetHex()));
-    CMerkleTx txGen(block.vtx[0]);
-    txGen.SetMerkleBranch(&block);
-    result.push_back(Pair("confirmations", (int)txGen.GetDepthInMainChain()));
+    int confirmations = -1;
+    // Only report confirmations if the block is on the main chain
+    if (chainActive.Contains(blockindex))
+        confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
@@ -225,7 +227,7 @@ Value getblockhash(const Array& params, bool fHelp)
 
     int nHeight = params[0].get_int();
     if (nHeight < 0 || nHeight > chainActive.Height())
-        throw runtime_error("Block number out of range.");
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CBlockIndex* pblockindex = chainActive[nHeight];
     return pblockindex->GetBlockHash().GetHex();
@@ -244,7 +246,7 @@ Value getblock(const Array& params, bool fHelp)
             "\nResult (for verbose = true):\n"
             "{\n"
             "  \"hash\" : \"hash\",     (string) the block hash (same as provided)\n"
-            "  \"confirmations\" : n,   (numeric) The number of confirmations\n"
+            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
             "  \"size\" : n,            (numeric) The block size\n"
             "  \"height\" : n,          (numeric) The block height or index\n"
             "  \"version\" : n,         (numeric) The block version\n"
@@ -319,6 +321,7 @@ Value gettxoutsetinfo(const Array& params, bool fHelp)
     Object ret;
 
     CCoinsStats stats;
+    pcoinsTip->Flush();
     if (pcoinsTip->GetStats(stats)) {
         ret.push_back(Pair("height", (int64_t)stats.nHeight));
         ret.push_back(Pair("bestblock", stats.hashBlock.GetHex()));
@@ -381,7 +384,7 @@ Value gettxout(const Array& params, bool fHelp)
     CCoins coins;
     if (fMempool) {
         LOCK(mempool.cs);
-        CCoinsViewMemPool view(*pcoinsTip, mempool);
+        CCoinsViewMemPool view(pcoinsTip, mempool);
         if (!view.GetCoins(hash, coins))
             return Value::null;
         mempool.pruneSpent(hash, coins); // TODO: this should be done by the CCoinsViewMemPool
@@ -392,7 +395,7 @@ Value gettxout(const Array& params, bool fHelp)
     if (n<0 || (unsigned int)n>=coins.vout.size() || coins.vout[n].IsNull())
         return Value::null;
 
-    std::map<uint256, CBlockIndex*>::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
     CBlockIndex *pindex = it->second;
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
@@ -432,7 +435,7 @@ Value verifychain(const Array& params, bool fHelp)
     if (params.size() > 1)
         nCheckDepth = params[1].get_int();
 
-    return CVerifyDB().VerifyDB(nCheckLevel, nCheckDepth);
+    return CVerifyDB().VerifyDB(pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
 Value getblockchaininfo(const Array& params, bool fHelp)
@@ -445,6 +448,7 @@ Value getblockchaininfo(const Array& params, bool fHelp)
             "{\n"
             "  \"chain\": \"xxxx\",        (string) current network name as defined in BIP70 (main, test, regtest)\n"
             "  \"blocks\": xxxxxx,         (numeric) the current number of blocks processed in the server\n"
+            "  \"headers\": xxxxxx,        (numeric) the current number of headers we have validated\n"
             "  \"bestblockhash\": \"...\", (string) the hash of the currently best block\n"
             "  \"difficulty\": xxxxxx,     (numeric) the current difficulty\n"
             "  \"verificationprogress\": xxxx, (numeric) estimate of verification progress [0..1]\n"
@@ -458,6 +462,7 @@ Value getblockchaininfo(const Array& params, bool fHelp)
     Object obj;
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
+    obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetDifficulty()));
     obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(chainActive.Tip())));
@@ -471,7 +476,7 @@ struct CompareBlocksByHeight
     bool operator()(const CBlockIndex* a, const CBlockIndex* b) const
     {
         /* Make sure that unequal blocks with the same height do not compare
-           equal.  Use the pointers themselves to make a distinction.  */
+           equal. Use the pointers themselves to make a distinction. */
 
         if (a->nHeight != b->nHeight)
           return (a->nHeight > b->nHeight);

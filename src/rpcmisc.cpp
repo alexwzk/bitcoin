@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "base58.h"
+#include "clientversion.h"
 #include "init.h"
 #include "main.h"
 #include "net.h"
@@ -74,8 +75,8 @@ Value getinfo(const Array& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
 
     Object obj;
-    obj.push_back(Pair("version",       (int)CLIENT_VERSION));
-    obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
+    obj.push_back(Pair("version", CLIENT_VERSION));
+    obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
@@ -87,7 +88,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       Params().NetworkID() == CBaseChainParams::TESTNET));
+    obj.push_back(Pair("testnet",       Params().TestnetToBeDeprecatedFieldRPC()));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));
@@ -250,8 +251,7 @@ CScript _createmultisig_redeemScript(const Array& params)
             throw runtime_error(" Invalid public key: "+ks);
         }
     }
-    CScript result;
-    result.SetMultisig(nRequired, pubkeys);
+    CScript result = GetScriptForMultisig(nRequired, pubkeys);
 
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
         throw runtime_error(
@@ -293,7 +293,7 @@ Value createmultisig(const Array& params, bool fHelp)
 
     // Construct using pay-to-script-hash:
     CScript inner = _createmultisig_redeemScript(params);
-    CScriptID innerID = inner.GetID();
+    CScriptID innerID(inner);
     CBitcoinAddress address(innerID);
 
     Object result;

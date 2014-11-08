@@ -1,5 +1,5 @@
 # Copyright (c) 2014 The Bitcoin Core developers
-# Distributed under the MIT/X11 software license, see the accompanying
+# Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 # Helpful routines for regression testing
@@ -10,7 +10,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "python-bitcoinrpc"))
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 import json
 import random
 import shutil
@@ -85,11 +85,11 @@ def initialize_chain(test_dir):
         # Create cache directories, run bitcoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
-            args = [ "bitcoind", "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
-            subprocess.check_call([ "bitcoin-cli", "-datadir="+datadir,
+            subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
         devnull.close()
         rpcs = []
@@ -110,11 +110,14 @@ def initialize_chain(test_dir):
             rpcs[i].setgenerate(True, 25)
             sync_blocks(rpcs)
 
-        # Shut them down, and remove debug.logs:
+        # Shut them down, and clean up cache directories:
         stop_nodes(rpcs)
         wait_bitcoinds()
         for i in range(4):
-            os.remove(debug_log("cache", i))
+            os.remove(log_filename("cache", i, "debug.log"))
+            os.remove(log_filename("cache", i, "db.log"))
+            os.remove(log_filename("cache", i, "peers.dat"))
+            os.remove(log_filename("cache", i, "fee_estimates.dat"))
 
     for i in range(4):
         from_dir = os.path.join("cache", "node"+str(i))
@@ -147,11 +150,11 @@ def start_node(i, dir, extra_args=None, rpchost=None):
     Start a bitcoind and return RPC connection to it
     """
     datadir = os.path.join(dir, "node"+str(i))
-    args = [ "bitcoind", "-datadir="+datadir, "-keypool=1", "-discover=0" ]
+    args = [ os.getenv("BITCOIND", "bitcoind"), "-datadir="+datadir, "-keypool=1", "-discover=0" ]
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
-    subprocess.check_call([ "bitcoin-cli", "-datadir="+datadir] +
+    subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
                           _rpchost_to_args(rpchost)  +
                           ["-rpcwait", "getblockcount"], stdout=devnull)
     devnull.close()
@@ -167,8 +170,8 @@ def start_nodes(num_nodes, dir, extra_args=None, rpchost=None):
     if extra_args is None: extra_args = [ None for i in range(num_nodes) ]
     return [ start_node(i, dir, extra_args[i], rpchost) for i in range(num_nodes) ]
 
-def debug_log(dir, n_node):
-    return os.path.join(dir, "node"+str(n_node), "regtest", "debug.log")
+def log_filename(dir, n_node, logname):
+    return os.path.join(dir, "node"+str(n_node), "regtest", logname)
 
 def stop_node(node, i):
     node.stop()
@@ -193,6 +196,10 @@ def connect_nodes(from_connection, node_num):
     # with transaction relaying
     while any(peer['version'] == 0 for peer in from_connection.getpeerinfo()):
         time.sleep(0.1)
+
+def connect_nodes_bi(nodes, a, b):
+    connect_nodes(nodes[a], b)
+    connect_nodes(nodes[b], a)
 
 def find_output(node, txid, amount):
     """
@@ -230,10 +237,12 @@ def make_change(from_node, amount_in, amount_out, fee):
     change = amount_in - amount
     if change > amount*2:
         # Create an extra change output to break up big inputs
-        outputs[from_node.getnewaddress()] = float(change/2)
-        change = change/2
+        change_address = from_node.getnewaddress()
+        # Split change in two, being careful of rounding:
+        outputs[change_address] = Decimal(change/2).quantize(Decimal('0.00000001'), rounding=ROUND_DOWN)
+        change = amount_in - amount - outputs[change_address]
     if change > 0:
-        outputs[from_node.getnewaddress()] = float(change)
+        outputs[from_node.getnewaddress()] = change
     return outputs
 
 def send_zeropri_transaction(from_node, to_node, amount, fee):

@@ -11,7 +11,8 @@
 
 #include "addrman.h"
 #include "chainparams.h"
-#include "core.h"
+#include "clientversion.h"
+#include "core/transaction.h"
 #include "ui_interface.h"
 
 #ifdef WIN32
@@ -48,8 +49,8 @@
 #endif
 #endif
 
-using namespace std;
 using namespace boost;
+using namespace std;
 
 namespace {
     const int MAX_OUTBOUND_CONNECTIONS = 8;
@@ -73,11 +74,11 @@ map<CNetAddr, LocalServiceInfo> mapLocalHost;
 static bool vfReachable[NET_MAX] = {};
 static bool vfLimited[NET_MAX] = {};
 static CNode* pnodeLocalHost = NULL;
-static CNode* pnodeSync = NULL;
 uint64_t nLocalHostNonce = 0;
 static std::vector<ListenSocket> vhListenSocket;
 CAddrMan addrman;
 int nMaxConnections = 125;
+bool fAddressesInitialized = false;
 
 vector<CNode*> vNodes;
 CCriticalSection cs_vNodes;
@@ -488,10 +489,6 @@ CNode* ConnectNode(CAddress addrConnect, const char *pszDest)
     {
         addrman.Attempt(addrConnect);
 
-        // Set to non-blocking
-        if (!SetSocketNonBlocking(hSocket, true))
-            LogPrintf("ConnectNode: Setting socket to non-blocking failed, error %s\n", NetworkErrorString(WSAGetLastError()));
-
         // Add node
         CNode* pnode = new CNode(hSocket, addrConnect, pszDest ? pszDest : "", false);
         pnode->AddRef();
@@ -522,10 +519,6 @@ void CNode::CloseSocketDisconnect()
     TRY_LOCK(cs_vRecvMsg, lockRecv);
     if (lockRecv)
         vRecvMsg.clear();
-
-    // if this was the sync node, we'll need a new one
-    if (this == pnodeSync)
-        pnodeSync = NULL;
 }
 
 void CNode::PushVersion()
@@ -618,7 +611,6 @@ void CNode::copyStats(CNodeStats &stats)
     X(nSendBytes);
     X(nRecvBytes);
     X(fWhitelisted);
-    stats.fSyncNode = (this == pnodeSync);
 
     // It is common for nodes with good ping times to suddenly become lagged,
     // due to a new block arriving or other large transfer.
@@ -689,7 +681,7 @@ int CNetMessage::readHeader(const char *pch, unsigned int nBytes)
     try {
         hdrbuf >> hdr;
     }
-    catch (std::exception &e) {
+    catch (const std::exception &) {
         return -1;
     }
 
@@ -1080,8 +1072,6 @@ void ThreadSocketHandler()
             BOOST_FOREACH(CNode* pnode, vNodesCopy)
                 pnode->Release();
         }
-
-        MilliSleep(10);
     }
 }
 
@@ -1492,60 +1482,19 @@ bool OpenNetworkConnection(const CAddress& addrConnect, CSemaphoreGrant *grantOu
 }
 
 
-// for now, use a very simple selection metric: the node from which we received
-// most recently
-static int64_t NodeSyncScore(const CNode *pnode) {
-    return pnode->nLastRecv;
-}
-
-void static StartSync(const vector<CNode*> &vNodes) {
-    CNode *pnodeNewSync = NULL;
-    int64_t nBestScore = 0;
-
-    int nBestHeight = g_signals.GetHeight().get_value_or(0);
-
-    // Iterate over all nodes
-    BOOST_FOREACH(CNode* pnode, vNodes) {
-        // check preconditions for allowing a sync
-        if (!pnode->fClient && !pnode->fOneShot &&
-            !pnode->fDisconnect && pnode->fSuccessfullyConnected &&
-            (pnode->nStartingHeight > (nBestHeight - 144)) &&
-            (pnode->nVersion < NOBLKS_VERSION_START || pnode->nVersion >= NOBLKS_VERSION_END)) {
-            // if ok, compare node's score with the best so far
-            int64_t nScore = NodeSyncScore(pnode);
-            if (pnodeNewSync == NULL || nScore > nBestScore) {
-                pnodeNewSync = pnode;
-                nBestScore = nScore;
-            }
-        }
-    }
-    // if a new sync candidate was found, start sync!
-    if (pnodeNewSync) {
-        pnodeNewSync->fStartSync = true;
-        pnodeSync = pnodeNewSync;
-    }
-}
-
 void ThreadMessageHandler()
 {
     SetThreadPriority(THREAD_PRIORITY_BELOW_NORMAL);
     while (true)
     {
-        bool fHaveSyncNode = false;
-
         vector<CNode*> vNodesCopy;
         {
             LOCK(cs_vNodes);
             vNodesCopy = vNodes;
             BOOST_FOREACH(CNode* pnode, vNodesCopy) {
                 pnode->AddRef();
-                if (pnode == pnodeSync)
-                    fHaveSyncNode = true;
             }
         }
-
-        if (!fHaveSyncNode)
-            StartSync(vNodesCopy);
 
         // Poll the connected nodes for messages
         CNode* pnodeTrickle = NULL;
@@ -1745,6 +1694,18 @@ void static Discover(boost::thread_group& threadGroup)
 
 void StartNode(boost::thread_group& threadGroup)
 {
+    uiInterface.InitMessage(_("Loading addresses..."));
+    // Load addresses for peers.dat
+    int64_t nStart = GetTimeMillis();
+    {
+        CAddrDB adb;
+        if (!adb.Read(addrman))
+            LogPrintf("Invalid or missing peers.dat; recreating\n");
+    }
+    LogPrintf("Loaded %i addresses from peers.dat  %dms\n",
+           addrman.size(), GetTimeMillis() - nStart);
+    fAddressesInitialized = true;
+
     if (semOutbound == NULL) {
         // initialize semaphore
         int nMaxOutbound = min(MAX_OUTBOUND_CONNECTIONS, nMaxConnections);
@@ -1791,8 +1752,12 @@ bool StopNode()
     if (semOutbound)
         for (int i=0; i<MAX_OUTBOUND_CONNECTIONS; i++)
             semOutbound->post();
-    MilliSleep(50);
-    DumpAddresses();
+
+    if (fAddressesInitialized)
+    {
+        DumpAddresses();
+        fAddressesInitialized = false;
+    }
 
     return true;
 }
@@ -1964,8 +1929,8 @@ bool CAddrDB::Write(const CAddrMan& addr)
     // open temp output file, and associate with CAutoFile
     boost::filesystem::path pathTmp = GetDataDir() / tmpfn;
     FILE *file = fopen(pathTmp.string().c_str(), "wb");
-    CAutoFile fileout = CAutoFile(file, SER_DISK, CLIENT_VERSION);
-    if (!fileout)
+    CAutoFile fileout(file, SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull())
         return error("%s : Failed to open file %s", __func__, pathTmp.string());
 
     // Write and commit header, data
@@ -1975,7 +1940,7 @@ bool CAddrDB::Write(const CAddrMan& addr)
     catch (std::exception &e) {
         return error("%s : Serialize or I/O error - %s", __func__, e.what());
     }
-    FileCommit(fileout);
+    FileCommit(fileout.Get());
     fileout.fclose();
 
     // replace existing peers.dat, if any, with new peers.dat.XXXX
@@ -1989,8 +1954,8 @@ bool CAddrDB::Read(CAddrMan& addr)
 {
     // open input file, and associate with CAutoFile
     FILE *file = fopen(pathAddr.string().c_str(), "rb");
-    CAutoFile filein = CAutoFile(file, SER_DISK, CLIENT_VERSION);
-    if (!filein)
+    CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
+    if (filein.IsNull())
         return error("%s : Failed to open file %s", __func__, pathAddr.string());
 
     // use file size to size memory buffer
@@ -2067,10 +2032,7 @@ CNode::CNode(SOCKET hSocketIn, CAddress addrIn, std::string addrNameIn, bool fIn
     nSendSize = 0;
     nSendOffset = 0;
     hashContinue = 0;
-    pindexLastGetBlocksBegin = 0;
-    hashLastGetBlocksEnd = 0;
     nStartingHeight = -1;
-    fStartSync = false;
     fGetAddr = false;
     fRelayTxes = false;
     setInventoryKnown.max_size(SendBufferSize() / 1000);
@@ -2109,6 +2071,8 @@ CNode::~CNode()
 
 void CNode::AskFor(const CInv& inv)
 {
+    if (mapAskFor.size() > MAPASKFOR_MAX_SZ)
+        return;
     // We're using mapAskFor as a priority queue,
     // the key is the earliest time the request can be sent
     int64_t nRequestTime;
@@ -2117,7 +2081,7 @@ void CNode::AskFor(const CInv& inv)
         nRequestTime = it->second;
     else
         nRequestTime = 0;
-    LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000).c_str(), id);
+    LogPrint("net", "askfor %s  %d (%s) peer=%d\n", inv.ToString(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000), id);
 
     // Make sure not to reuse time indexes to keep things in the same order
     int64_t nNow = GetTimeMicros() - 1000000;

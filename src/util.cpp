@@ -159,8 +159,8 @@ instance_of_cinit;
 // the mutex).
 
 static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
-// We use boost::call_once() to make sure these are initialized in
-// in a thread-safe manner the first time it is called:
+// We use boost::call_once() to make sure these are initialized
+// in a thread-safe manner the first time called:
 static FILE* fileout = NULL;
 static boost::mutex* mutexDebugLog = NULL;
 
@@ -211,6 +211,7 @@ int LogPrintStr(const std::string &str)
     {
         // print to console
         ret = fwrite(str.data(), 1, str.size(), stdout);
+        fflush(stdout);
     }
     else if (fPrintToDebugLog && AreBaseParamsConfigured())
     {
@@ -394,7 +395,8 @@ boost::filesystem::path GetDefaultDataDir()
 #endif
 }
 
-static boost::filesystem::path pathCached[CBaseChainParams::MAX_NETWORK_TYPES+1];
+static boost::filesystem::path pathCached;
+static boost::filesystem::path pathCachedNetSpecific;
 static CCriticalSection csPathCached;
 
 const boost::filesystem::path &GetDataDir(bool fNetSpecific)
@@ -403,10 +405,7 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 
     LOCK(csPathCached);
 
-    int nNet = CBaseChainParams::MAX_NETWORK_TYPES;
-    if (fNetSpecific) nNet = BaseParams().NetworkID();
-
-    fs::path &path = pathCached[nNet];
+    fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
 
     // This can be called during exceptions by LogPrintf(), so we cache the
     // value so we don't have to do memory allocations after that.
@@ -432,8 +431,8 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 
 void ClearDatadirCache()
 {
-    std::fill(&pathCached[0], &pathCached[CBaseChainParams::MAX_NETWORK_TYPES+1],
-        boost::filesystem::path());
+    pathCached = boost::filesystem::path();
+    pathCachedNetSpecific = boost::filesystem::path();
 }
 
 boost::filesystem::path GetConfigFile()
@@ -471,6 +470,7 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
     ClearDatadirCache();
 }
 
+#ifndef WIN32
 boost::filesystem::path GetPidFile()
 {
     boost::filesystem::path pathPidFile(GetArg("-pid", "bitcoind.pid"));
@@ -478,7 +478,6 @@ boost::filesystem::path GetPidFile()
     return pathPidFile;
 }
 
-#ifndef WIN32
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid)
 {
     FILE* file = fopen(path.string().c_str(), "w");
@@ -494,7 +493,7 @@ bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
 {
 #ifdef WIN32
     return MoveFileExA(src.string().c_str(), dest.string().c_str(),
-                      MOVEFILE_REPLACE_EXISTING);
+                       MOVEFILE_REPLACE_EXISTING) != 0;
 #else
     int rc = std::rename(src.string().c_str(), dest.string().c_str());
     return (rc == 0);
@@ -617,7 +616,7 @@ void ShrinkDebugFile()
     {
         // Restart the file with some of the end
         std::vector <char> vch(200000,0);
-        fseek(file, -vch.size(), SEEK_END);
+        fseek(file, -((long)vch.size()), SEEK_END);
         int nBytes = fread(begin_ptr(vch), 1, vch.size(), file);
         fclose(file);
 

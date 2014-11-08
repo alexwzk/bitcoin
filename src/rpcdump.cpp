@@ -6,9 +6,11 @@
 #include "rpcserver.h"
 #include "init.h"
 #include "main.h"
+#include "script/script.h"
+#include "script/standard.h"
 #include "sync.h"
-#include "utiltime.h"
 #include "util.h"
+#include "utiltime.h"
 #include "wallet.h"
 
 #include <fstream>
@@ -16,6 +18,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+
 #include "json/json_spirit_value.h"
 
 using namespace json_spirit;
@@ -111,8 +114,6 @@ Value importprivkey(const Array& params, bool fHelp)
     CPubKey pubkey = key.GetPubKey();
     CKeyID vchAddress = pubkey.GetID();
     {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
-
         pwalletMain->MarkDirty();
         pwalletMain->SetAddressBook(vchAddress, strLabel, "receive");
 
@@ -160,25 +161,26 @@ Value importaddress(const Array& params, bool fHelp)
 
     CBitcoinAddress address(params[0].get_str());
     if (address.IsValid()) {
-        script.SetDestination(address.Get());
+        script = GetScriptForDestination(address.Get());
     } else if (IsHex(params[0].get_str())) {
         std::vector<unsigned char> data(ParseHex(params[0].get_str()));
         script = CScript(data.begin(), data.end());
     } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address or script");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Bitcoin address or script");
     }
 
     string strLabel = "";
     if (params.size() > 1)
         strLabel = params[1].get_str();
 
-    // Whether to perform rescan after import
+    // Whether to perform rescan after import
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
     {
-        LOCK2(cs_main, pwalletMain->cs_wallet);
+        if (::IsMine(*pwalletMain, script) == ISMINE_SPENDABLE)
+            throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this address or script");
 
         // add to address book or update label
         if (address.IsValid())
@@ -191,7 +193,7 @@ Value importaddress(const Array& params, bool fHelp)
         pwalletMain->MarkDirty();
 
         if (!pwalletMain->AddWatchOnly(script))
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
 
         if (fRescan)
         {

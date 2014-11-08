@@ -2,8 +2,10 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef GUIUTIL_H
-#define GUIUTIL_H
+#ifndef BITCOIN_QT_GUIUTIL_H
+#define BITCOIN_QT_GUIUTIL_H
+
+#include "amount.h"
 
 #include <QHeaderView>
 #include <QMessageBox>
@@ -46,7 +48,7 @@ namespace GUIUtil
     QString formatBitcoinURI(const SendCoinsRecipient &info);
 
     // Returns true if given address+amount meets "dust" definition
-    bool isDust(const QString& address, qint64 amount);
+    bool isDust(const QString& address, const CAmount& amount);
 
     // HTML escaping for rich text controls
     QString HtmlEscape(const QString& str, bool fMultiLine=false);
@@ -186,4 +188,4 @@ namespace GUIUtil
     QString formatPingTime(double dPingTime);
 } // namespace GUIUtil
 
-#endif // GUIUTIL_H
+#endif // BITCOIN_QT_GUIUTIL_H

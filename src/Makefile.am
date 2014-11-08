@@ -38,14 +38,16 @@ LIBBITCOINQT=qt/libbitcoinqt.a
 # Added for Permacoin
 LIBPOR=PoRLottery/libpor.a
 
+# Make is not made aware of per-object dependencies to avoid limiting building parallelization
+# But to build the less dependent modules first, we manually select their order here:
 noinst_LIBRARIES = \
-  libbitcoin_server.a \
-  libbitcoin_common.a \
-  libbitcoin_cli.a \
-  libbitcoin_util.a \
-  univalue/libbitcoin_univalue.a \
   crypto/libbitcoin_crypto.a \
-  PoRLottery/libpor.a
+  libbitcoin_util.a \
+  PoRLottery/libpor.a \
+  libbitcoin_common.a \
+  univalue/libbitcoin_univalue.a \
+  libbitcoin_server.a \
+  libbitcoin_cli.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
 noinst_LIBRARIES += libbitcoin_wallet.a
@@ -68,8 +70,10 @@ BITCOIN_CORE_H = \
   addrman.h \
   alert.h \
   allocators.h \
+  amount.h \
   base58.h \
   bloom.h \
+  chain.h \
   chainparams.h \
   chainparamsbase.h \
   chainparamsseeds.h \
@@ -79,10 +83,14 @@ BITCOIN_CORE_H = \
   coincontrol.h \
   coins.h \
   compat.h \
-  core.h \
+  compressor.h \
+  core/block.h \
+  core/transaction.h \
   core_io.h \
   crypter.h \
   db.h \
+  eccryptoverify.h \
+  ecwrapper.h \
   hash.h \
   init.h \
   key.h \
@@ -97,12 +105,18 @@ BITCOIN_CORE_H = \
   noui.h \
   pow.h \
   protocol.h \
+  pubkey.h \
   random.h \
   rpcclient.h \
   rpcprotocol.h \
   rpcserver.h \
-  script.h \
+  script/interpreter.h \
+  script/script.h \
+  script/sigcache.h \
+  script/sign.h \
+  script/standard.h \
   serialize.h \
+  streams.h \
   sync.h \
   threadsafety.h \
   timedata.h \
@@ -111,13 +125,15 @@ BITCOIN_CORE_H = \
   txmempool.h \
   ui_interface.h \
   uint256.h \
+  undo.h \
   util.h \
   utilstrencodings.h \
   utilmoneystr.h \
   utiltime.h \
   version.h \
-  walletdb.h \
   wallet.h \
+  wallet_ismine.h \
+  walletdb.h \
   compat/sanity.h
 
 JSON_H = \
@@ -143,14 +159,15 @@ obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh $(abs_top_builddir)/src/obj/build.h \
 	  $(abs_top_srcdir)
-libbitcoin_util_a-version.$(OBJEXT): obj/build.h
+libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: shared between bitcoind and bitcoin-qt
-libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES)
+libbitcoin_server_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS)
 libbitcoin_server_a_SOURCES = \
   addrman.cpp \
   alert.cpp \
   bloom.cpp \
+  chain.cpp \
   checkpoints.cpp \
   init.cpp \
   leveldbwrapper.cpp \
@@ -165,6 +182,7 @@ libbitcoin_server_a_SOURCES = \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
   rpcserver.cpp \
+  script/sigcache.cpp \
   timedata.cpp \
   txdb.cpp \
   txmempool.cpp \
@@ -181,6 +199,7 @@ libbitcoin_wallet_a_SOURCES = \
   rpcdump.cpp \
   rpcwallet.cpp \
   wallet.cpp \
+  wallet_ismine.cpp \
   walletdb.cpp \
   $(BITCOIN_CORE_H)
 
@@ -219,18 +238,27 @@ univalue_libbitcoin_univalue_a_SOURCES = \
 libbitcoin_common_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_common_a_SOURCES = \
   allocators.cpp \
+  amount.cpp \
   base58.cpp \
   chainparams.cpp \
   coins.cpp \
-  core.cpp \
+  compressor.cpp \
+  core/block.cpp \
+  core/transaction.cpp \
   core_read.cpp \
   core_write.cpp \
+  eccryptoverify.cpp \
+  ecwrapper.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
   protocol.cpp \
-  script.cpp \
+  pubkey.cpp \
+  script/interpreter.cpp \
+  script/script.cpp \
+  script/sign.cpp \
+  script/standard.cpp \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
@@ -241,6 +269,7 @@ libbitcoin_util_a_SOURCES = \
   compat/glibc_sanity.cpp \
   compat/glibcxx_sanity.cpp \
   chainparamsbase.cpp \
+  clientversion.cpp \
   random.cpp \
   rpcprotocol.cpp \
   sync.cpp \
@@ -249,7 +278,6 @@ libbitcoin_util_a_SOURCES = \
   utilstrencodings.cpp \
   utilmoneystr.cpp \
   utiltime.cpp \
-  version.cpp \
   $(BITCOIN_CORE_H)
 
 if GLIBC_BACK_COMPAT
@@ -291,16 +319,14 @@ if TARGET_WINDOWS
 bitcoind_SOURCES += bitcoind-res.rc
 endif
 
-bitcoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS)
+bitcoind_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS)
 bitcoind_CPPFLAGS = $(BITCOIN_INCLUDES)
 bitcoind_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS)
 
 # bitcoin-cli binary #
 bitcoin_cli_LDADD = \
   $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_COMMON) \
   $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
   $(BOOST_LIBS) \
   $(SSL_LIBS) \
   $(CRYPTO_LIBS)
@@ -326,8 +352,8 @@ if USE_LIBSECP256K1
 endif
 
   bitcoin_tx_LDADD += $(BOOST_LIBS) \
-  $(SSL_LIBS) \
   $(CRYPTO_LIBS)
+
 bitcoin_tx_SOURCES = bitcoin-tx.cpp
 bitcoin_tx_CPPFLAGS = $(BITCOIN_INCLUDES)
 #
@@ -352,7 +378,7 @@ clean-local:
 
 .rc.o:
 	@test -f $(WINDRES)
-	$(AM_V_GEN) $(WINDRES) -i $< -o $@
+	$(AM_V_GEN) $(WINDRES) -DWINDRES_PREPROC -i $< -o $@
 
 .mm.o:
 	$(AM_V_CXX) $(OBJCXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \

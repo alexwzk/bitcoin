@@ -14,6 +14,7 @@
 #include "netbase.h"
 #include "protocol.h"
 #include "random.h"
+#include "streams.h"
 #include "sync.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -51,6 +52,8 @@ static const bool DEFAULT_UPNP = USE_UPNP;
 #else
 static const bool DEFAULT_UPNP = false;
 #endif
+/** The maximum number of entries in mapAskFor */
+static const size_t MAPASKFOR_MAX_SZ = MAX_INV_SZ;
 
 unsigned int ReceiveFloodSize();
 unsigned int SendBufferSize();
@@ -156,7 +159,6 @@ public:
     int nStartingHeight;
     uint64_t nSendBytes;
     uint64_t nRecvBytes;
-    bool fSyncNode;
     bool fWhitelisted;
     double dPingTime;
     double dPingWait;
@@ -274,10 +276,7 @@ protected:
 
 public:
     uint256 hashContinue;
-    CBlockIndex* pindexLastGetBlocksBegin;
-    uint256 hashLastGetBlocksEnd;
     int nStartingHeight;
-    bool fStartSync;
 
     // flood relay
     std::vector<CAddress> vAddrToSend;
@@ -615,4 +614,4 @@ public:
     bool Read(CAddrMan& addr);
 };
 
-#endif
+#endif // BITCOIN_NET_H

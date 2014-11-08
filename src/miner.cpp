@@ -5,7 +5,9 @@
 
 #include "miner.h"
 
-#include "core.h"
+#include "amount.h"
+#include "core/block.h"
+#include "core/transaction.h"
 #include "hash.h"
 #include "main.h"
 #include "net.h"
@@ -17,6 +19,7 @@
 #endif
 
 #include <boost/thread.hpp>
+#include <boost/tuple/tuple.hpp>
 
 using namespace std;
 
@@ -83,6 +86,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         return NULL;
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
 
+    // -regtest only: allow overriding block.nVersion with
+    // -blockversion=N to test forking scenarios
+    if (Params().MineBlocksOnDemand())
+        pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
+
     // Create coinbase tx
     CMutableTransaction txNew;
     txNew.vin.resize(1);
@@ -111,12 +119,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
 
     // Collect memory pool transactions into the block
-    int64_t nFees = 0;
+    CAmount nFees = 0;
 
     {
         LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = chainActive.Tip();
-        CCoinsViewCache view(*pcoinsTip, true);
+        CCoinsViewCache view(pcoinsTip);
 
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
@@ -135,7 +143,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             COrphan* porphan = NULL;
             double dPriority = 0;
-            int64_t nTotalIn = 0;
+            CAmount nTotalIn = 0;
             bool fMissingInputs = false;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
@@ -167,12 +175,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     nTotalIn += mempool.mapTx[txin.prevout.hash].GetTx().vout[txin.prevout.n].nValue;
                     continue;
                 }
-                const CCoins &coins = view.GetCoins(txin.prevout.hash);
+                const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+                assert(coins);
 
-                int64_t nValueIn = coins.vout[txin.prevout.n].nValue;
+                CAmount nValueIn = coins->vout[txin.prevout.n].nValue;
                 nTotalIn += nValueIn;
 
-                int nConf = pindexPrev->nHeight - coins.nHeight + 1;
+                int nConf = pindexPrev->nHeight - coins->nHeight + 1;
 
                 dPriority += (double)nValueIn * nConf;
             }
@@ -228,7 +237,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             // Skip free transactions if we're past the minimum block size:
             const uint256& hash = tx.GetHash();
             double dPriorityDelta = 0;
-            int64_t nFeeDelta = 0;
+            CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
             if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
                 continue;
@@ -246,7 +255,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if (!view.HaveInputs(tx))
                 continue;
 
-            int64_t nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
+            CAmount nTxFees = view.GetValueIn(tx)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
@@ -256,7 +265,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             // policy here, but we still have to ensure that the block we
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
-            if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS))
+            if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true))
                 continue;
 
             CTxUndo txundo;
@@ -315,7 +324,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CBlockIndex indexDummy(*pblock);
         indexDummy.pprev = pindexPrev;
         indexDummy.nHeight = pindexPrev->nHeight + 1;
-        CCoinsViewCache viewNew(*pcoinsTip, true);
+        CCoinsViewCache viewNew(pcoinsTip);
         CValidationState state;
         if (!ConnectBlock(*pblock, state, &indexDummy, viewNew, true))
             throw std::runtime_error("CreateNewBlock() : ConnectBlock failed");
@@ -392,7 +401,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     if (!reservekey.GetReservedKey(pubkey))
         return NULL;
 
-    CScript scriptPubKey = CScript() << pubkey << OP_CHECKSIG;
+    CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     return CreateNewBlock(scriptPubKey);
 }
 
@@ -419,8 +428,8 @@ bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessBlock(state, NULL, pblock))
-        return error("BitcoinMiner : ProcessBlock, block not accepted");
+    if (!ProcessNewBlock(state, NULL, pblock))
+        return error("BitcoinMiner : ProcessNewBlock, block not accepted");
 
     return true;
 }

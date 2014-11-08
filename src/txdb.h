@@ -3,8 +3,8 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOIN_TXDB_LEVELDB_H
-#define BITCOIN_TXDB_LEVELDB_H
+#ifndef BITCOIN_TXDB_H
+#define BITCOIN_TXDB_H
 
 #include "leveldbwrapper.h"
 #include "main.h"
@@ -33,10 +33,8 @@ public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
-    bool SetCoins(const uint256 &txid, const CCoins &coins);
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
-    bool SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock);
     bool GetStats(CCoinsStats &stats) const;
 };
@@ -64,4 +62,4 @@ public:
     bool LoadBlockIndexGuts();
 };
 
-#endif // BITCOIN_TXDB_LEVELDB_H
+#endif // BITCOIN_TXDB_H

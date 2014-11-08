@@ -3,6 +3,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "clientversion.h"
 #include "rpcserver.h"
 #include "init.h"
 #include "main.h"
@@ -129,7 +130,6 @@ bool AppInit(int argc, char* argv[])
             }
             if (pid > 0) // Parent process, pid is child process id
             {
-                CreatePidFile(GetPidFile(), pid);
                 return true;
             }
             // Child process falls through to rest of initialization

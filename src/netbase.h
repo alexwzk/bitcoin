@@ -19,6 +19,9 @@
 extern int nConnectTimeout;
 extern bool fNameLookup;
 
+/** -timeout default */
+static const int DEFAULT_CONNECT_TIMEOUT = 5000;
+
 #ifdef WIN32
 // In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
 #undef SetPort
@@ -58,6 +61,9 @@ class CNetAddr
         bool IsIPv4() const;    // IPv4 mapped address (::FFFF:0:0/96, 0.0.0.0/0)
         bool IsIPv6() const;    // IPv6 address (not mapped IPv4, not Tor)
         bool IsRFC1918() const; // IPv4 private networks (10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12)
+        bool IsRFC2544() const; // IPv4 inter-network communcations (192.18.0.0/15)
+        bool IsRFC6598() const; // IPv4 ISP-level NAT (100.64.0.0/10)
+        bool IsRFC5737() const; // IPv4 documentation addresses (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24)
         bool IsRFC3849() const; // IPv6 documentation address (2001:0DB8::/32)
         bool IsRFC3927() const; // IPv4 autoconfig (169.254.0.0/16)
         bool IsRFC3964() const; // IPv6 6to4 tunnelling (2002::/16)
@@ -88,10 +94,12 @@ class CNetAddr
         friend bool operator!=(const CNetAddr& a, const CNetAddr& b);
         friend bool operator<(const CNetAddr& a, const CNetAddr& b);
 
-        IMPLEMENT_SERIALIZE
-            (
-             READWRITE(FLATDATA(ip));
-            )
+        ADD_SERIALIZE_METHODS;
+
+        template <typename Stream, typename Operation>
+        inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+            READWRITE(FLATDATA(ip));
+        }
 };
 
 class CSubNet
@@ -148,15 +156,16 @@ class CService : public CNetAddr
         CService(const struct in6_addr& ipv6Addr, unsigned short port);
         CService(const struct sockaddr_in6& addr);
 
-        IMPLEMENT_SERIALIZE
-            (
-             CService* pthis = const_cast<CService*>(this);
-             READWRITE(FLATDATA(ip));
-             unsigned short portN = htons(port);
-             READWRITE(portN);
-             if (fRead)
-                 pthis->port = ntohs(portN);
-            )
+        ADD_SERIALIZE_METHODS;
+
+        template <typename Stream, typename Operation>
+        inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+            READWRITE(FLATDATA(ip));
+            unsigned short portN = htons(port);
+            READWRITE(portN);
+            if (ser_action.ForRead())
+                 port = ntohs(portN);
+        }
 };
 
 typedef CService proxyType;
@@ -182,4 +191,4 @@ bool CloseSocket(SOCKET& hSocket);
 /** Disable or enable blocking-mode for a socket */
 bool SetSocketNonBlocking(SOCKET& hSocket, bool fNonBlocking);
 
-#endif
+#endif // BITCOIN_NETBASE_H
