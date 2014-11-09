@@ -131,6 +131,23 @@ public:
         //     CTxIn(COutPoint(000000, -1), coinbase 04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73)
         //     CTxOut(nValue=50.00000000, scriptPubKey=0x5F1DF16B2B704C8A578D0B)
         //   vMerkleTree: 4a5e1e
+    	BUFFER<PMC_LFSIZE> tbuff;
+    	uint8_t d[PMC_LFSIZE];
+    	for (int i = 0; i < PMC_LFSIZE; i++) {
+    		d[i] = 'a';
+    	}
+    	/*tbuff.Serialize(cout,SER_DISK,CLIENT_VERSION);
+    	 cout << "\n";*/
+
+    	std::vector< BUFFER<PMC_LFSIZE> > tsegmts;
+    	for (int i = 0; i < 4; i++) {
+    		d[0] = 'a' + i;
+    		tbuff.assign(d, PMC_LFSIZE);
+    		tsegmts.push_back(tbuff);
+    	}
+    	PATH<PMC_LFSIZE> tpath;
+    	MERKLE<PMC_LFSIZE> tmerkle(tsegmts);
+    	tpath = tmerkle.returnPath(2);
         const char* pszTimestamp = "Server time of 11/03/2014 @ 3:56pm in GMT for Permacoin Alpha Release";
         CMutableTransaction txNew;
         txNew.vin.resize(1);

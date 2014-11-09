@@ -2269,6 +2269,7 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 	PATH< RUN_FPSLFBYTE > init_sign;
 	const PATH< RUN_FPSLFBYTE > *signaturePt = NULL;
 
+	//TODO times of challenges should be set by nBits
 	challenges = block.ticket.mkproofs.size();
 	for (size_t i = 0; i < RUN_FPSLFNUM; i++) {
 			unrevealed_v.push_back(i);
@@ -2280,9 +2281,6 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 	//intialize sigma_0 (empty signature) and r_0
 	signaturePt = &init_sign;
 	r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
-
-	//TODO How to calculate k? should be set by nBits
-	challenges = CHALNG_CONST;
 
 	//TODO Check if operator= works ( passing values )
 	for(size_t i = 0; i < challenges; i++){
