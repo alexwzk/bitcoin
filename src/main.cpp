@@ -2262,6 +2262,8 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 }
 
 bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTicket){
+	//TODO DEV PURPOSE ONLY -DELETE BEFORE RELEASE-
+	LogPrintf("Checking LocalPoR...\n");
 	size_t r_i = 0, challenges = 0;
 	uint256 hashvalue;
 	std::list<size_t> unrevealed_v;
