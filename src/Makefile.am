@@ -206,12 +206,7 @@ libbitcoin_wallet_a_SOURCES = \
 # permacoin: shared between bitcoind and bitcoin-qt
 PoRLottery_libpor_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 PoRLottery_libpor_a_SOURCES = \
-  PoRLottery/buffer.cpp \
   PoRLottery/common.cpp \
-  PoRLottery/fps.cpp    \
-  PoRLottery/merkle.cpp \
-  PoRLottery/path.cpp   \
-  PoRLottery/ticket.cpp \
   $(PERMACOIN_CORE_H) \
   $(BITCOIN_CORE_H)
 
