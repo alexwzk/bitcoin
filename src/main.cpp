@@ -2299,12 +2299,14 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 		                         REJECT_INVALID, "broken-storage");
 		}
 
+		LogPrintf("Checking LocalPoR Passed %zu / total %zu ...\n",i,challenges);
 		//Compute r_{i+1}
 		signaturePt = &block.ticket.signatures[i];
 		inputs = prefix + signaturePt->toString();
 		r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 	}
 
+	LogPrintf("Checking LocalPoR All clear ...\n");
 	return fCheckTicket;
 }
 
