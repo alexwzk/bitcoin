@@ -126,7 +126,7 @@ std::string CBlock::ToString() const {
 	s << "Ticket: \n Public Key: ";
 	s << ticket.pubkey.ToString() << "\n";
 	s << "Number of Segments: " << ticket.mkproofs.size() << "\n";
-	if (ticket.mkproofs.size() > 0) {
+	/*if (ticket.mkproofs.size() > 0) {
 		s << "The first segments: \n";
 		s << "data: " << ticket.mkproofs[0].returnLeaf().toString() << "\n";
 		s << "mk proof: (";
@@ -135,9 +135,9 @@ std::string CBlock::ToString() const {
 			s << ticket.mkproofs[0].returnHashSiblings().at(i).ToString()
 					<< ", ";
 		s << ") \n";
-	}
+	}*/
 	s << "Number of lottery signatures: " << ticket.signatures.size() << "\n";
-	if (ticket.signatures.size() > 0) {
+	/*if (ticket.signatures.size() > 0) {
 		s << "The first signature: \n";
 		s << "private: " << ticket.signatures[0].returnLeaf().toString()
 				<< "\n";
@@ -147,9 +147,9 @@ std::string CBlock::ToString() const {
 			s << ticket.signatures[0].returnHashSiblings().at(i).ToString()
 					<< ", ";
 		s << ") \n";
-	}
+	}*/
 	s << "Number of Reward Signatures: " << vsignreward.size() << "\n";
-	if (vsignreward.size() > 0) {
+	/*if (vsignreward.size() > 0) {
 		s << "The first rsignature: \n";
 		s << "private: " << vsignreward[0].returnLeaf().toString() << "\n";
 		s << "mk proof: (";
@@ -157,6 +157,6 @@ std::string CBlock::ToString() const {
 				i++)
 			s << vsignreward[0].returnHashSiblings().at(i).ToString() << ", ";
 		s << ") \n";
-	}
+	}*/
 	return s.str();
 }
