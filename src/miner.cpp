@@ -351,6 +351,8 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     pblock->vtx[0] = txCoinbase;
     pblock->hashMerkleRoot = pblock->BuildMerkleTree(); //TODO PMC add in ticket...
 }
+//TODO !!!! Delete this before compile
+//#define ENABLE_WALLET 1
 
 #ifdef ENABLE_WALLET
 //////////////////////////////////////////////////////////////////////////////
@@ -372,8 +374,8 @@ bool static ScanHash(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phas
     CHash256 hasher;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << *pblock;
-    assert(ss.size() == 80);
-    hasher.Write((unsigned char*)&ss[0], 76);
+    //assert(ss.size() == 80); //Changed
+    hasher.Write((unsigned char*)&ss[0], ss.size() - 4); //TODO need a constant number
 
     while (true) {
         nNonce++;
@@ -446,7 +448,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
     try {
         while (true) {
-            if (Params().MiningRequiresPeers()) {
+           if (Params().MiningRequiresPeers()) {
                 // Busy-wait for the network to come online so we don't waste time mining
                 // on an obsolete chain. In regtest mode we expect to fly solo.
                 while (vNodes.empty())
@@ -480,7 +482,7 @@ void static BitcoinMiner(CWallet *pwallet)
             uint32_t nNonce = 0;
             uint32_t nOldNonce = 0;
             while (true) {
-                bool fFound = ScanHash(pblock, nNonce, &hash);
+                bool fFound = ScanHash(pblock, nNonce, &hash); //check if found the solution
                 uint32_t nHashesDone = nNonce - nOldNonce;
                 nOldNonce = nNonce;
 
