@@ -2288,11 +2288,12 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 	for(size_t i = 0; i < challenges; i++){
 		//puz || pk || sigma_{i-1} || F[r_i]
 		inputs = prefix + signaturePt->toString() + block.ticket.mkproofs[r_i].returnLeaf().toString();
-
 		hashvalue = Hash(inputs.begin(),inputs.end());
 
 		//Verification
+		LogPrintf("Checking th r_i: %d \n",r_i);
 		fCheckTicket &= FPS< RUN_FPSLFBYTE >::verifySignature(block.ticket.signatures[i], hashvalue, block.ticket.pubkey, unrevealed_v);
+		LogPrintf("Signature result: %d \n",fCheckTicket);
 		fCheckTicket &= MERKLE< RUN_PMCLFBYTE >::verifyPath(block.ticket.mkproofs[i], r_i, PMC::db_rootdigest);
 		if(!fCheckTicket){
 		       return state.DoS(50, error("CheckLocalPoR() : proof of retrievability failed"),
