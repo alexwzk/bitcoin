@@ -452,12 +452,8 @@ void static BitcoinMiner(CWallet *pwallet)
 	std::string prefix, inputs;
 	PATH <RUN_PMCLFBYTE> temp_path;
 	PATH< RUN_FPSLFBYTE > temp_signature;
-	bool fcheck = true;
 	CAutoFile finput(fopen("1.out", "rb"), SER_DISK, CLIENT_VERSION);
-	std::list<size_t> unrevealed_v;
-	for (size_t i = 0; i < RUN_FPSLFNUM; i++) {
-			unrevealed_v.push_back(i);
-	}	printf("Init Message: %s \n","Reading from the open file...");
+	printf("Init Message: %s \n","Reading from the open file...");
 	for(int i = 0; i < RUN_PMCLFNUM; i++) {
 		temp_path.Unserialize(finput,SER_DISK,CLIENT_VERSION);
 		inmemory_paths.push_back(temp_path);
@@ -470,12 +466,12 @@ void static BitcoinMiner(CWallet *pwallet)
 
 	try {
 		while (true) {
-			if (Params().MiningRequiresPeers()) {
+		  /*if (Params().MiningRequiresPeers()) {
 				// Busy-wait for the network to come online so we don't waste time mining
 				// on an obsolete chain. In regtest mode we expect to fly solo.
 				while (vNodes.empty())
 				MilliSleep(1000);
-			}
+				}*/
 
 			//
 			// Create new block
@@ -492,6 +488,22 @@ void static BitcoinMiner(CWallet *pwallet)
 			CBlock *pblock = &pblocktemplate->block;
 			IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
+	        LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+			//
+			// Search
+			//
+			int64_t nStart = GetTime();
+			uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+			uint256 hash;
+			uint32_t nNonce = 0;
+			uint32_t nOldNonce = 0;
+			while (true) {
+				bool fFound = ScanHash(pblock, nNonce, &hash); //check if found the solution
+				uint32_t nHashesDone = nNonce - nOldNonce;
+				nOldNonce = nNonce;
+
+				// Check if something found
 			LogPrintf("Init Permacoin features \n");
 			signatures_pool.reset();
 			pblock->ticket.pubkey = signatures_pool.returnPubkey();
@@ -510,16 +522,12 @@ void static BitcoinMiner(CWallet *pwallet)
 				temp_path = inmemory_paths.at(r_i);
 				LogPrintf("PMC r_i %d: %zu\n", i, r_i);
 				pblock->ticket.mkproofs.push_back(temp_path);
-				fcheck &= MERKLE< RUN_PMCLFBYTE >::verifyPath(pblock->ticket.mkproofs[i], r_i, PMC::db_rootdigest);
-				printf("ck: %d\n",fcheck);
 				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().getHex();
 				hashvalue = Hash(inputs.begin(),inputs.end());
 
 				//Store signature
 				temp_signature = signatures_pool.returnSign(hashvalue);
 				pblock->ticket.signatures.push_back(temp_signature);
-				fcheck &= FPS< RUN_FPSLFBYTE >::verifySignature(pblock->ticket.signatures[i], hashvalue, pblock->ticket.pubkey, unrevealed_v);
-				printf("ck: %d\n",fcheck);
 
 				//Compute r_{i+1}
 				inputs = prefix + temp_signature.getHex();
@@ -528,22 +536,6 @@ void static BitcoinMiner(CWallet *pwallet)
 	        pblock->hashTicket = pblock->ticket.getHash();
 	        pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
 
-	        LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
-			//
-			// Search
-			//
-			int64_t nStart = GetTime();
-			uint256 hashTarget = uint256().SetCompact(pblock->nBits);
-			uint256 hash;
-			uint32_t nNonce = 0;
-			uint32_t nOldNonce = 0;
-			while (true) {
-				bool fFound = ScanHash(pblock, nNonce, &hash); //check if found the solution
-				uint32_t nHashesDone = nNonce - nOldNonce;
-				nOldNonce = nNonce;
-
-				// Check if something found
 				if (fFound)
 				{
 					if (hash <= hashTarget)
