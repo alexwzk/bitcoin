@@ -453,7 +453,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     	FPS<RUN_FPSLFBYTE> signatures_pool(RUN_FPSLFNUM,RUN_FPSLFSELECT,RUN_FPSLFREVEAL);
     	std::vector< uint256 > reveal_seeds;
     	std::vector<PATH <RUN_PMCLFBYTE> > inmemory_paths;
-        pblocktemplate = CreateNewBlock(scriptDummy,signatures_pool,inmemory_paths);
+        pblocktemplate = CreateNewBlock(scriptDummy);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 

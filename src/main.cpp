@@ -2276,25 +2276,26 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 	for (size_t i = 0; i < RUN_FPSLFNUM; i++) {
 			unrevealed_v.push_back(i);
 	}
-	prefix = itostr(block.nVersion) + block.hashPrevBlock.ToString() + block.hashMerkleRoot.ToString() + \
-			itostr(block.nTime) + block.ticket.pubkey.ToString();
+	prefix = itostr(block.nVersion) + block.hashPrevBlock.GetHex() + block.hashMerkleRoot.GetHex() +
+			itostr(block.nTime) + block.ticket.pubkey.GetHex();
 	inputs = prefix + block.ticket.seedToString();
 
 	//intialize sigma_0 (empty signature) and r_0
+	init_sign.setNull();
 	signaturePt = &init_sign;
 	r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 
 	//TODO Check if operator= works ( passing values )
 	for(size_t i = 0; i < challenges; i++){
 		//puz || pk || sigma_{i-1} || F[r_i]
-		inputs = prefix + signaturePt->toString() + block.ticket.mkproofs[r_i].returnLeaf().toString();
+		inputs = prefix + signaturePt->getHex() + block.ticket.mkproofs[i].returnLeaf().getHex();
 		hashvalue = Hash(inputs.begin(),inputs.end());
 
 		//Verification
 		LogPrintf("Checking th r_i: %d \n",r_i);
-		fCheckTicket &= FPS< RUN_FPSLFBYTE >::verifySignature(block.ticket.signatures[i], hashvalue, block.ticket.pubkey, unrevealed_v);
-		LogPrintf("Signature result: %d \n",fCheckTicket);
 		fCheckTicket &= MERKLE< RUN_PMCLFBYTE >::verifyPath(block.ticket.mkproofs[i], r_i, PMC::db_rootdigest);
+		LogPrintf("Paths result: %d \n",fCheckTicket);
+		fCheckTicket &= FPS< RUN_FPSLFBYTE >::verifySignature(block.ticket.signatures[i], hashvalue, block.ticket.pubkey, unrevealed_v);
 		if(!fCheckTicket){
 		       return state.DoS(50, error("CheckLocalPoR() : proof of retrievability failed"),
 		                         REJECT_INVALID, "broken-storage");
@@ -2303,7 +2304,7 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 		LogPrintf("Checking LocalPoR Passed %zu / total %zu ...\n",i,challenges);
 		//Compute r_{i+1}
 		signaturePt = &block.ticket.signatures[i];
-		inputs = prefix + signaturePt->toString();
+		inputs = prefix + signaturePt->getHex();
 		r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 	}
 

@@ -74,7 +74,7 @@ public:
 	}
 };
 
-CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, FPS<RUN_FPSLFBYTE>& signatures_pool,std::vector<PATH <RUN_PMCLFBYTE> >& inmemory_paths) {
+CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn) {
 	// Create new block
 	auto_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
 	if (!pblocktemplate.get())
@@ -116,47 +116,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, FPS<RUN_FPSLFBYTE>
 	unsigned int nBlockMinSize = GetArg("-blockminsize",
 			DEFAULT_BLOCK_MIN_SIZE);
 	nBlockMinSize = std::min(nBlockMaxSize, nBlockMinSize);
-
-
-
-	size_t r_i = 0, challenges = CHALNG_CONST;
-	uint256 hashvalue;
-	std::string prefix, inputs;
-	PATH <RUN_PMCLFBYTE> temp_path;
-	PATH< RUN_FPSLFBYTE > temp_signature;
-	BUFFER<RUN_PMCLFBYTE> temp_buffer;
-	LogPrintf("Init Permacoin features \n");
-	signatures_pool.reset();
-	pblock->ticket.pubkey = signatures_pool.returnPubkey();
-	pblock->ticket.seed = pblock->nNonce;
-	prefix = itostr(pblock->nVersion) + pblock->hashPrevBlock.ToString() + pblock->hashMerkleRoot.ToString() +
-	itostr(pblock->nTime) + pblock->ticket.pubkey.ToString();
-	inputs = prefix + pblock->ticket.seedToString();
-
-	//intialize sigma_0 (empty signature) and r_0
-	temp_signature.setNull();
-	r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
-
-	//TODO Check if operator= works ( passing values )
-	for(size_t i = 0; i < challenges; i++) {
-		//puz || pk || sigma_{i-1} || F[r_i]
-		temp_path = inmemory_paths.at(r_i);
-		LogPrintf("PMC r_i %d: %zu capa: %d, %d\n", i, r_i,pblock->ticket.mkproofs[i].vhashes.capacity(),temp_path.vhashes.size());
-
-		pblock->ticket.mkproofs.push_back(temp_path);
-		temp_buffer = pblock->ticket.mkproofs[r_i].returnLeaf();
-		inputs = prefix + temp_signature.toString() + temp_buffer.toString();
-
-		hashvalue = Hash(inputs.begin(),inputs.end());
-
-		//Store signature
-		temp_signature = signatures_pool.returnSign(hashvalue);
-		pblock->ticket.signatures.push_back(temp_signature);
-
-		//Compute r_{i+1}
-		inputs = prefix + temp_signature.toString();
-		r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
-	}
 
 	// Collect memory pool transactions into the block
 	CAmount nFees = 0;
@@ -247,8 +206,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, FPS<RUN_FPSLFBYTE>
 		uint64_t nBlockTx = 0;
 		int nBlockSigOps = 100;
 		bool fSortedByFee = (nBlockPrioritySize <= 0);
-		uint64_t nBlockSize = 1000 + ::GetSerializeSize(pblock->ticket,SER_DISK,CLIENT_VERSION) \
-				+ ::GetSerializeSize(pblock->vsignreward,SER_DISK,CLIENT_VERSION); //PMC changed
+		uint64_t nBlockSize = 1000;
 
 		TxPriorityCompare comparer(fSortedByFee);
 		std::make_heap(vecPriority.begin(), vecPriority.end(), comparer);
@@ -345,6 +303,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, FPS<RUN_FPSLFBYTE>
 			}
 		}
 
+		nBlockSize = 2003939; //TODO !!! PMC changed
 		nLastBlockTx = nBlockTx;
 		nLastBlockSize = nBlockSize;
 		LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
@@ -358,8 +317,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, FPS<RUN_FPSLFBYTE>
 		// Fill in header
 		pblock->hashPrevBlock = pindexPrev->GetBlockHash();
 		UpdateTime(pblock, pindexPrev);
-        pblock->hashTicket = pblock->ticket.getHash();
-        pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
 		pblock->nBits = GetNextWorkRequired(pindexPrev, pblock);
 		pblock->nNonce = 0;
 		pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
@@ -447,7 +404,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,FPS<RUN_FPSLFBYTE>
 	return NULL;
 
 	CScript scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-	return CreateNewBlock(scriptPubKey, signatures_pool, inmemory_paths);
+	return CreateNewBlock(scriptPubKey);
 }
 
 bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
@@ -495,8 +452,12 @@ void static BitcoinMiner(CWallet *pwallet)
 	std::string prefix, inputs;
 	PATH <RUN_PMCLFBYTE> temp_path;
 	PATH< RUN_FPSLFBYTE > temp_signature;
+	bool fcheck = true;
 	CAutoFile finput(fopen("1.out", "rb"), SER_DISK, CLIENT_VERSION);
-	printf("Init Message: %s \n","Reading from the open file...");
+	std::list<size_t> unrevealed_v;
+	for (size_t i = 0; i < RUN_FPSLFNUM; i++) {
+			unrevealed_v.push_back(i);
+	}	printf("Init Message: %s \n","Reading from the open file...");
 	for(int i = 0; i < RUN_PMCLFNUM; i++) {
 		temp_path.Unserialize(finput,SER_DISK,CLIENT_VERSION);
 		inmemory_paths.push_back(temp_path);
@@ -530,6 +491,42 @@ void static BitcoinMiner(CWallet *pwallet)
 			}
 			CBlock *pblock = &pblocktemplate->block;
 			IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+
+			LogPrintf("Init Permacoin features \n");
+			signatures_pool.reset();
+			pblock->ticket.pubkey = signatures_pool.returnPubkey();
+			pblock->ticket.seed = pblock->nNonce;
+			prefix = itostr(pblock->nVersion) + pblock->hashPrevBlock.GetHex() + pblock->hashMerkleRoot.GetHex() +
+			itostr(pblock->nTime) + pblock->ticket.pubkey.GetHex();
+			inputs = prefix + pblock->ticket.seedToString();
+
+			//intialize sigma_0 (empty signature) and r_0
+			temp_signature.setNull();
+			r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+
+			//TODO Check if operator= works ( passing values )
+			for(size_t i = 0; i < challenges; i++) {
+				//puz || pk || sigma_{i-1} || F[r_i]
+				temp_path = inmemory_paths.at(r_i);
+				LogPrintf("PMC r_i %d: %zu\n", i, r_i);
+				pblock->ticket.mkproofs.push_back(temp_path);
+				fcheck &= MERKLE< RUN_PMCLFBYTE >::verifyPath(pblock->ticket.mkproofs[i], r_i, PMC::db_rootdigest);
+				printf("ck: %d\n",fcheck);
+				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().getHex();
+				hashvalue = Hash(inputs.begin(),inputs.end());
+
+				//Store signature
+				temp_signature = signatures_pool.returnSign(hashvalue);
+				pblock->ticket.signatures.push_back(temp_signature);
+				fcheck &= FPS< RUN_FPSLFBYTE >::verifySignature(pblock->ticket.signatures[i], hashvalue, pblock->ticket.pubkey, unrevealed_v);
+				printf("ck: %d\n",fcheck);
+
+				//Compute r_{i+1}
+				inputs = prefix + temp_signature.getHex();
+				r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+			}
+	        pblock->hashTicket = pblock->ticket.getHash();
+	        pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
 
 	        LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
 			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
@@ -597,40 +594,6 @@ void static BitcoinMiner(CWallet *pwallet)
 						}
 					}
 				}
-
-				LogPrintf("Reset Permacoin features \n");
-				signatures_pool.reset();
-				pblock->ticket.pubkey = signatures_pool.returnPubkey();
-				pblock->ticket.seed = pblock->nNonce;
-				prefix = itostr(pblock->nVersion) + pblock->hashPrevBlock.ToString() + pblock->hashMerkleRoot.ToString() +
-				itostr(pblock->nTime) + pblock->ticket.pubkey.ToString();
-				inputs = prefix + pblock->ticket.seedToString();
-
-				//intialize sigma_0 (empty signature) and r_0
-				temp_signature.setNull();
-				r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
-
-				//TODO Check if operator= works ( passing values )
-				for(size_t i = 0; i < challenges; i++) {
-					//puz || pk || sigma_{i-1} || F[r_i]
-					temp_path = inmemory_paths.at(r_i);
-					LogPrintf("PMC r_i %d: %zu capa: %d\n", i, r_i,pblock->ticket.mkproofs.capacity());
-
-					pblock->ticket.mkproofs[i] = temp_path;
-					inputs = prefix + temp_signature.toString() + pblock->ticket.mkproofs[r_i].returnLeaf().toString();
-
-					hashvalue = Hash(inputs.begin(),inputs.end());
-
-					//Store signature
-					temp_signature = signatures_pool.returnSign(hashvalue);
-					pblock->ticket.signatures[i] = temp_signature;
-
-					//Compute r_{i+1}
-					inputs = prefix + temp_signature.toString();
-					r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
-				}
-		        pblock->hashTicket = pblock->ticket.getHash();
-		        pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
 
 				// Check for stop or if block needs to be rebuilt
 				boost::this_thread::interruption_point();
