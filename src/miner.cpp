@@ -521,6 +521,7 @@ void static BitcoinMiner(CWallet *pwallet)
           	        pblock->hashTicket = pblock->ticket.getHash();
 	                pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
 
+                        LogPrintf("size of ticket %d , size of sign %d \n",::GetSerializeSize(pblock->ticket, SER_NETWORK, PROTOCOL_VERSION),::GetSerializeSize(pblock->vsignreward, SER_NETWORK, PROTOCOL_VERSION));                                                                                                                           
 			LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
 			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 			//
