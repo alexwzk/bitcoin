@@ -114,7 +114,7 @@ public:
         pchMessageStart[3] = 0xd9;
         vAlertPubKey = ParseHex("04fc9702847840aaf195de8442ebecedf5b095cdbb9bc716bda9110971b28a49e0ead8564ff0db22209e0374782c093bb899692d524e9d6a6956e7c5ecbcd68284");
         nDefaultPort = 8333;
-        bnProofOfWorkLimit = ~uint256(0) >> 32;
+        bnProofOfWorkLimit = ~uint256(0) >> 1;
         nSubsidyHalvingInterval = 210000;
         nEnforceBlockUpgradeMajority = 750;
         nRejectBlockOutdatedMajority = 950;
@@ -145,7 +145,7 @@ public:
         genesis.hashRewardSig = Hash(genesis.vsignreward.begin(),genesis.vsignreward.end());
         genesis.nVersion = 1;
         genesis.nTime    = 1415030160;
-        genesis.nBits    = 0x1d00ffff;
+        genesis.nBits    = 0x207fffff;
         genesis.nNonce   = 2083236893;
 
         hashGenesisBlock = genesis.GetHash();

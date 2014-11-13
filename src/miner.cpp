@@ -303,7 +303,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn) {
 			}
 		}
 
-		nBlockSize = 2003939; //TODO !!! PMC changed
+		//		nBlockSize = 2003939; //TODO !!! PMC changed
 		nLastBlockTx = nBlockTx;
 		nLastBlockSize = nBlockSize;
 		LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
@@ -351,8 +351,6 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev,
 	pblock->vtx[0] = txCoinbase;
 	pblock->hashMerkleRoot = pblock->BuildMerkleTree(); //TODO PMC add in ticket...
 }
-//TODO !!!! Delete this before compile
-//#define ENABLE_WALLET
 
 #ifdef ENABLE_WALLET
 //////////////////////////////////////////////////////////////////////////////
@@ -386,8 +384,10 @@ bool static ScanHash(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phas
 
 		// Return the nonce if the hash has at least some zero bits,
 		// caller will check if it has enough to reach the target
-		if (((uint16_t*)phash)[15] == 0)
+		if (((uint16_t*)phash)[15] == 0){
+		  LogPrintf("phash: %s\n",phash->GetHex());
 		return true;
+		}
 
 		// If nothing found after trying for a while, return -1
 		if ((nNonce & 0xffff) == 0)
@@ -488,22 +488,7 @@ void static BitcoinMiner(CWallet *pwallet)
 			CBlock *pblock = &pblocktemplate->block;
 			IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-	        LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
-			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
-			//
-			// Search
-			//
-			int64_t nStart = GetTime();
-			uint256 hashTarget = uint256().SetCompact(pblock->nBits);
-			uint256 hash;
-			uint32_t nNonce = 0;
-			uint32_t nOldNonce = 0;
-			while (true) {
-				bool fFound = ScanHash(pblock, nNonce, &hash); //check if found the solution
-				uint32_t nHashesDone = nNonce - nOldNonce;
-				nOldNonce = nNonce;
-
-				// Check if something found
+			//TODO !!!! PMC semi-Fake PoR Lottery 
 			LogPrintf("Init Permacoin features \n");
 			signatures_pool.reset();
 			pblock->ticket.pubkey = signatures_pool.returnPubkey();
@@ -533,8 +518,24 @@ void static BitcoinMiner(CWallet *pwallet)
 				inputs = prefix + temp_signature.getHex();
 				r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 			}
-	        pblock->hashTicket = pblock->ticket.getHash();
-	        pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
+          	        pblock->hashTicket = pblock->ticket.getHash();
+	                pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());
+
+			LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+			::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
+			//
+			// Search
+			//
+			int64_t nStart = GetTime();
+			uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+			uint256 hash;
+			uint32_t nNonce = 0;
+			uint32_t nOldNonce = 0;
+			while (true) {
+				// Check if something found
+		                bool fFound = ScanHash(pblock, nNonce, &hash); //check if found the solution
+				uint32_t nHashesDone = nNonce - nOldNonce;
+				nOldNonce = nNonce;
 
 				if (fFound)
 				{
@@ -549,7 +550,6 @@ void static BitcoinMiner(CWallet *pwallet)
 						LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", hash.GetHex(), hashTarget.GetHex());
 						ProcessBlockFound(pblock, *pwallet, reservekey);
 						SetThreadPriority(THREAD_PRIORITY_LOWEST);
-
 						// In regression test mode, stop mining after a block is found.
 						if (Params().MineBlocksOnDemand())
 						throw boost::thread_interrupted();
