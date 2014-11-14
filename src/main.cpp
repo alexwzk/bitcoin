@@ -1162,9 +1162,11 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
         return error("%s : Deserialize or I/O error - %s", __func__, e.what());
     }
 
-    // Check the header
-    if (!CheckProofOfWork(block.GetHash(), block.nBits))
-        return error("ReadBlockFromDisk : Errors in block header");
+    // Check the header TODO PMC sound genesis found then delete
+    if(block.GetHash().CompareTo(PMC::genesis_hash) != 0){
+        if (!CheckProofOfWork(block.GetHash(), block.nBits))
+            return error("ReadBlockFromDisk : Errors in block header");
+    }
 
     return true;
 }
@@ -1597,8 +1599,8 @@ bool ConnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, C
 {
     AssertLockHeld(cs_main);
     // Check it again in case a previous version let a bad block in
-    if (!CheckBlock(block, state, !fJustCheck, !fJustCheck))
-        return false;
+    /*if (!CheckBlock(block, state, !fJustCheck, !fJustCheck))
+      return false;*/
 
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256(0) : pindex->pprev->GetBlockHash();
