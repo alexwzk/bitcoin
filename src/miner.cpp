@@ -624,7 +624,7 @@ void static BitcoinMiner(CWallet *pwallet)
 		LogPrintf("BitcoinMiner terminated\n");
 		throw;
 	}
-=======
+/****
     LogPrintf("BitcoinMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("bitcoin-miner");
@@ -752,7 +752,8 @@ void static BitcoinMiner(CWallet *pwallet)
         LogPrintf("BitcoinMiner terminated\n");
         throw;
     }
->>>>>>> upstream/master
+upstream/master ***/
+
 }
 
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)

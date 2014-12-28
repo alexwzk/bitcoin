@@ -49,8 +49,6 @@ class CValidationState;
 struct CBlockTemplate;
 struct CNodeStateStats;
 
-/** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 10000000;
 /** Default for -blockmaxsize and -blockminsize, which control the range of sizes the mining code will create **/
 static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 7500000;
 static const unsigned int DEFAULT_BLOCK_MIN_SIZE = 0;
@@ -374,12 +372,8 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins */
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins, bool fJustCheck = false);
 
-<<<<<<< HEAD
 // Context-independent validity checks
 bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTicket = true);
-=======
-/** Context-independent validity checks */
->>>>>>> upstream/master
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW = true);
 bool CheckBlock(const CBlock& block, CValidationState& state, bool fCheckPOW = true, bool fCheckMerkleRoot = true, bool fCheckTicket = true, bool fCheckSignatures = true);
 
