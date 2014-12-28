@@ -30,9 +30,9 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBBITCOIN_UNIVALUE=univalue/libbitcoin_univalue.a
 LIBBITCOINQT=qt/libbitcoinqt.a
-# Added for Permacoin
-LIBPOR=PoRLottery/libpor.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBPERMACOIN_POR=PoRLottery/libpor.a
+
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
@@ -155,6 +155,7 @@ JSON_H = \
   json/json_spirit_writer.h \
   json/json_spirit_writer_template.h
 
+# Added for Permacoin
 PERMACOIN_CORE_H = \
   PoRLottery/common.h \
   PoRLottery/buffer.h \
@@ -196,6 +197,7 @@ libbitcoin_server_a_SOURCES = \
   timedata.cpp \
   txdb.cpp \
   txmempool.cpp \
+# Added for Permacoin
   $(PERMACOIN_CORE_H) \
   $(JSON_H) \
   $(BITCOIN_CORE_H)
@@ -317,9 +319,9 @@ bitcoind_LDADD = \
   $(LIBBITCOIN_UTIL) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBLEVELDB) \
-  $(LIBMEMEN \
-  $(LIBPOR) \
-  $(LIBSECP256K1)
+  $(LIBMEMENV) \
+  $(LIBSECP256K1) \
+  $(LIBPERMACOIN_POR)
 
 if ENABLE_WALLET
 bitcoind_LDADD += libbitcoin_wallet.a
@@ -429,9 +431,9 @@ clean-local:
 #include Makefile.test.include
 #endif
 
-if ENABLE_QT
-include Makefile.qt.include
-endif
+#if ENABLE_QT
+#include Makefile.qt.include
+#endif
 
 #if ENABLE_QT_TESTS
 #include Makefile.qttest.include
