@@ -197,7 +197,6 @@ libbitcoin_server_a_SOURCES = \
   timedata.cpp \
   txdb.cpp \
   txmempool.cpp \
-# Added for Permacoin
   $(PERMACOIN_CORE_H) \
   $(JSON_H) \
   $(BITCOIN_CORE_H)
