@@ -406,7 +406,7 @@ bool static ScanHash(const CBlockHeader *pblock, uint32_t& nNonce, uint256 *phas
 	}
 }
 
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,FPS<RUN_FPSLFBYTE>& signatures_pool,std::vector<PATH <RUN_PMCLFBYTE> >& inmemory_paths)
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
 {
 	CPubKey pubkey;
 	if (!reservekey.GetReservedKey(pubkey))
@@ -488,7 +488,7 @@ void static BitcoinMiner(CWallet *pwallet)
 			unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
 			CBlockIndex* pindexPrev = chainActive.Tip();
 
-			auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey, signatures_pool, inmemory_paths));
+			auto_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 			if (!pblocktemplate.get())
 			{
 				LogPrintf("Error in BitcoinMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
