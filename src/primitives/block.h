@@ -123,7 +123,6 @@ public:
         vMerkleTree.clear();
         ticket.clear();
         vsignreward.clear();
-        //TODO Crash possible seg fault -> didn't add capacity
     }
 
     CBlockHeader GetBlockHeader() const
