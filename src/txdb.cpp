@@ -39,7 +39,7 @@ bool CCoinsViewDB::HaveCoins(const uint256 &txid) const {
 uint256 CCoinsViewDB::GetBestBlock() const {
     uint256 hashBestChain;
     if (!db.Read('B', hashBestChain))
-        return uint256(0);
+        return uint256();
     return hashBestChain;
 }
 
@@ -56,7 +56,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) {
         CCoinsMap::iterator itOld = it++;
         mapCoins.erase(itOld);
     }
-    if (hashBlock != uint256(0))
+    if (!hashBlock.IsNull())
         BatchWriteHashBestChain(batch, hashBlock);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
@@ -179,7 +179,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
 
     CDataStream ssKeySet(SER_DISK, CLIENT_VERSION);
-    ssKeySet << make_pair('b', uint256(0));
+    ssKeySet << make_pair('b', uint256());
     pcursor->Seek(ssKeySet.str());
 
     // Load mapBlockIndex
@@ -214,7 +214,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if(pindexNew->GetBlockHash().CompareTo(PMC::genesis_hash) != 0){
+                if(UintToArith256(pindexNew->GetBlockHash()).CompareTo(PMC::genesis_hash) != 0){
                     if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits))
                         return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
                 }

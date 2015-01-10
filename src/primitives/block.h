@@ -12,8 +12,9 @@
 
 #include "PoRLottery/ticket.h"
 #include "PoRLottery/fps.h"
+
 /** The maximum allowed size for a serialized block, in bytes (network rule) */
-static const unsigned int MAX_BLOCK_SIZE = 10000000;
+static const unsigned int MAX_BLOCK_SIZE = 1000000;
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
@@ -59,10 +60,10 @@ public:
     void SetNull()
     {
         nVersion = CBlockHeader::CURRENT_VERSION;
-        hashPrevBlock = 0;
-        hashMerkleRoot = 0;
-        hashTicket = 0;
-        hashRewardSig = 0;
+        hashPrevBlock.SetNull();
+        hashMerkleRoot.SetNull();
+        hashTicket.SetNull();
+        hashRewardSig.SetNull();
         nTime = 0;
         nBits = 0;
         nNonce = 0;

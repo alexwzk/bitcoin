@@ -72,7 +72,7 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDe
         if(txDetails)
         {
             Object objTx;
-            TxToJSON(tx, uint256(0), objTx);
+            TxToJSON(tx, uint256(), objTx);
             txs.push_back(objTx);
         }
         else
@@ -280,7 +280,7 @@ Value getblock(const Array& params, bool fHelp)
         );
 
     std::string strHash = params[0].get_str();
-    uint256 hash(strHash);
+    uint256 hash(uint256S(strHash));
 
     bool fVerbose = true;
     if (params.size() > 1)
@@ -385,7 +385,7 @@ Value gettxout(const Array& params, bool fHelp)
     Object ret;
 
     std::string strHash = params[0].get_str();
-    uint256 hash(strHash);
+    uint256 hash(uint256S(strHash));
     int n = params[1].get_int();
     bool fMempool = true;
     if (params.size() > 2)
@@ -621,7 +621,7 @@ Value invalidateblock(const Array& params, bool fHelp)
         );
 
     std::string strHash = params[0].get_str();
-    uint256 hash(strHash);
+    uint256 hash(uint256S(strHash));
     CValidationState state;
 
     {
@@ -660,7 +660,7 @@ Value reconsiderblock(const Array& params, bool fHelp)
         );
 
     std::string strHash = params[0].get_str();
-    uint256 hash(strHash);
+    uint256 hash(uint256S(strHash));
     CValidationState state;
 
     {

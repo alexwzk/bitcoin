@@ -412,7 +412,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     return CreateNewBlock(scriptPubKey);
 }
 
-bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
+static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     LogPrintf("%s\n", pblock->ToString());
     LogPrintf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue));
@@ -531,7 +531,7 @@ void static BitcoinMiner(CWallet *pwallet)
 			// Search
 			//
 			int64_t nStart = GetTime();
-			uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+			arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
 			uint256 hash;
 			uint32_t nNonce = 0;
 			uint32_t nOldNonce = 0;
@@ -543,7 +543,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
 				if (fFound)
 				{
-					if (hash <= hashTarget)
+					if (UintToArith256(hash) <= hashTarget)
 					{
 						// Found a solution
 						pblock->nNonce = nNonce;
@@ -689,7 +689,7 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
             // Search
             //
             int64_t nStart = GetTime();
-            uint256 hashTarget = uint256().SetCompact(pblock->nBits);
+            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
             uint256 hash;
             uint32_t nNonce = 0;
             uint32_t nOldNonce = 0;
@@ -701,7 +701,7 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet, int nThreads)
                 // Check if something found
                 if (fFound)
                 {
-                    if (hash <= hashTarget)
+                    if (UintToArith256(hash) <= hashTarget)
                     {
                         // Found a solution
                         pblock->nNonce = nNonce;

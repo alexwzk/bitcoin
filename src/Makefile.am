@@ -39,7 +39,7 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
-noinst_LIBRARIES = \
+EXTRA_LIBRARIES = \
   crypto/libbitcoin_crypto.a \
   libbitcoin_util.a \
   PoRLottery/libpor.a \
@@ -49,7 +49,7 @@ noinst_LIBRARIES = \
   libbitcoin_cli.a
 if ENABLE_WALLET
 BITCOIN_INCLUDES += $(BDB_CPPFLAGS)
-noinst_LIBRARIES += libbitcoin_wallet.a
+EXTRA_LIBRARIES += libbitcoin_wallet.a
 endif
 
 if BUILD_BITCOIN_LIBS
@@ -77,11 +77,12 @@ BITCOIN_CORE_H = \
   alert.h \
   allocators.h \
   amount.h \
+  arith_uint256.h \
   base58.h \
   bloom.h \
   chain.h \
-  chainparams.h \
   chainparamsbase.h \
+  chainparams.h \
   chainparamsseeds.h \
   checkpoints.h \
   checkqueue.h \
@@ -90,8 +91,6 @@ BITCOIN_CORE_H = \
   coins.h \
   compat.h \
   compressor.h \
-  primitives/block.h \
-  primitives/transaction.h \
   core_io.h \
   crypter.h \
   db.h \
@@ -111,6 +110,8 @@ BITCOIN_CORE_H = \
   net.h \
   noui.h \
   pow.h \
+  primitives/block.h \
+  primitives/transaction.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -118,11 +119,11 @@ BITCOIN_CORE_H = \
   rpcprotocol.h \
   rpcserver.h \
   script/interpreter.h \
+  script/script_error.h \
   script/script.h \
   script/sigcache.h \
   script/sign.h \
   script/standard.h \
-  script/script_error.h \
   serialize.h \
   streams.h \
   sync.h \
@@ -135,13 +136,13 @@ BITCOIN_CORE_H = \
   uint256.h \
   undo.h \
   util.h \
-  utilstrencodings.h \
   utilmoneystr.h \
+  utilstrencodings.h \
   utiltime.h \
   version.h \
+  walletdb.h \
   wallet.h \
   wallet_ismine.h \
-  walletdb.h \
   compat/sanity.h
 
 JSON_H = \
@@ -252,6 +253,7 @@ univalue_libbitcoin_univalue_a_SOURCES = \
 libbitcoin_common_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_common_a_SOURCES = \
   allocators.cpp \
+  arith_uint256.cpp \
   amount.cpp \
   base58.cpp \
   chainparams.cpp \
@@ -281,18 +283,18 @@ libbitcoin_common_a_SOURCES = \
 # backward-compatibility objects and their sanity checks are linked.
 libbitcoin_util_a_CPPFLAGS = $(BITCOIN_INCLUDES)
 libbitcoin_util_a_SOURCES = \
-  compat/strnlen.cpp \
-  compat/glibc_sanity.cpp \
-  compat/glibcxx_sanity.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
+  compat/glibc_sanity.cpp \
+  compat/glibcxx_sanity.cpp \
+  compat/strnlen.cpp \
   random.cpp \
   rpcprotocol.cpp \
   sync.cpp \
   uint256.cpp \
   util.cpp \
-  utilstrencodings.cpp \
   utilmoneystr.cpp \
+  utilstrencodings.cpp \
   utiltime.cpp \
   $(BITCOIN_CORE_H)
 
@@ -373,19 +375,19 @@ bitcoin_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/bitcoinconsensus.h
 libbitcoinconsensus_la_SOURCES = \
-  primitives/transaction.cpp \
   crypto/hmac_sha512.cpp \
+  crypto/ripemd160.cpp \
   crypto/sha1.cpp \
   crypto/sha256.cpp \
   crypto/sha512.cpp \
-  crypto/ripemd160.cpp \
   eccryptoverify.cpp \
   ecwrapper.cpp \
   hash.cpp \
+  primitives/transaction.cpp \
   pubkey.cpp \
-  script/script.cpp \
-  script/interpreter.cpp \
   script/bitcoinconsensus.cpp \
+  script/interpreter.cpp \
+  script/script.cpp \
   uint256.cpp \
   utilstrencodings.cpp
 
