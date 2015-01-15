@@ -2053,8 +2053,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         CInv inv(MSG_BLOCK, pindexNew->GetBlockHash());
         bool rv = ConnectBlock(*pblock, state, pindexNew, view);
         g_signals.BlockChecked(*pblock, state);
-        //TODO PMC Uncomment check for generating genesis block
-	/*if (!rv) {
+        //TODO DEV Uncomment check for generating genesis block
+	  /*if (!rv) {
             if (state.IsInvalid())
                 InvalidBlockFound(pindexNew, state);
             return error("ConnectTip() : ConnectBlock %s failed", pindexNew->GetBlockHash().ToString());
@@ -2512,17 +2512,16 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 	//intialize sigma_0 (empty signature) and r_0
 	init_sign.setNull();
 	signaturePt = &init_sign;
-	r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+	r_i = PRM::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 
-	//TODO Check if operator= works ( passing values )
 	for(size_t i = 0; i < challenges; i++){
 		//puz || pk || sigma_{i-1} || F[r_i]
-		inputs = prefix + signaturePt->getHex() + block.ticket.mkproofs[i].returnLeaf().getHex();
+		inputs = prefix + signaturePt->getHex() + block.ticket.mkproofs[i].returnLeaf().GetHex();
 		hashvalue = Hash(inputs.begin(),inputs.end());
 
 		//Verification
 		LogPrintf("Checking th r_i: %d \n",r_i);
-		fCheckTicket &= MERKLE< RUN_PMCLFBYTE >::verifyPath(block.ticket.mkproofs[i], r_i, ArithToUint256(PMC::db_rootdigest));
+		fCheckTicket &= MERKLE< RUN_PRMLFBYTE >::verifyPath(block.ticket.mkproofs[i], r_i, ArithToUint256(PRM::db_rootdigest));
 		LogPrintf("Paths result: %d \n",fCheckTicket);
 		fCheckTicket &= FPS< RUN_FPSLFBYTE >::verifySignature(block.ticket.signatures[i], hashvalue, block.ticket.pubkey, unrevealed_v);
 		if(!fCheckTicket){
@@ -2534,7 +2533,7 @@ bool CheckLocalPoR(const CBlock& block, CValidationState& state, bool fCheckTick
 		//Compute r_{i+1}
 		signaturePt = &block.ticket.signatures[i];
 		inputs = prefix + signaturePt->getHex();
-		r_i = PMC::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+		r_i = PRM::computeR_i(block.ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 	}
 
 	LogPrintf("Checking LocalPoR All clear ...\n");

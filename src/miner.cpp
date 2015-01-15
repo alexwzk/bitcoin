@@ -356,7 +356,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     assert(txCoinbase.vin[0].scriptSig.size() <= 100);
 
 	pblock->vtx[0] = txCoinbase;
-	pblock->hashMerkleRoot = pblock->BuildMerkleTree(); //TODO PMC add in ticket...
+	pblock->hashMerkleRoot = pblock->BuildMerkleTree(); //TODO PRM add in ticket...
 }
 
 #ifdef ENABLE_WALLET
@@ -454,16 +454,16 @@ void static BitcoinMiner(CWallet *pwallet)
 	//Added for the LocalPoR Lottery
 	FPS<RUN_FPSLFBYTE> signatures_pool(RUN_FPSLFNUM,RUN_FPSLFSELECT,RUN_FPSLFREVEAL);
 	std::vector< uint256 > reveal_seeds;
-	std::vector< PATH <RUN_PMCLFBYTE> > inmemory_paths;
+	std::vector< PATH <RUN_PRMLFBYTE> > inmemory_paths;
 	//TODO times of challenges should be set by nBits
 	size_t r_i = 0, challenges = CHALNG_CONST;
 	uint256 hashvalue;
 	std::string prefix, inputs;
-	PATH <RUN_PMCLFBYTE> temp_path;
+	PATH <RUN_PRMLFBYTE> temp_path;
 	PATH< RUN_FPSLFBYTE > temp_signature;
 	CAutoFile finput(fopen("1.out", "rb"), SER_DISK, CLIENT_VERSION); //TODO Should be changed into seek and pull disk memory
 	printf("Init Message: %s \n","Reading from the open file...");
-	for(int i = 0; i < RUN_PMCLFNUM; i++) {
+	for(int i = 0; i < RUN_PRMLFNUM; i++) {
 		temp_path.Unserialize(finput,SER_DISK,CLIENT_VERSION);
 		inmemory_paths.push_back(temp_path);
 	}
@@ -493,7 +493,7 @@ void static BitcoinMiner(CWallet *pwallet)
 			CBlock *pblock = &pblocktemplate->block;
 			IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-			//TODO !!!! PMC semi-Fake PoR Lottery 
+			//TODO !!!! PRM semi-Fake PoR Lottery 
 			LogPrintf("Init Permacoin features \n");
 			signatures_pool.reset();
 			pblock->ticket.pubkey = signatures_pool.returnPubkey();
@@ -504,14 +504,14 @@ void static BitcoinMiner(CWallet *pwallet)
 
 			//intialize sigma_0 (empty signature) and r_0
 			temp_signature.setNull();
-			r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+			r_i = PRM::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 
 			for(size_t i = 0; i < challenges; i++) {
 				//puz || pk || sigma_{i-1} || F[r_i]
 				temp_path = inmemory_paths.at(r_i);
-				LogPrintf("PMC r_i %d: %zu\n", i, r_i);
+				LogPrintf("PRM r_i %d: %zu\n", i, r_i);
 				pblock->ticket.mkproofs.push_back(temp_path);
-				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().getHex();
+				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().GetHex();
 				hashvalue = Hash(inputs.begin(),inputs.end());
 
 				//Store signature
@@ -520,7 +520,7 @@ void static BitcoinMiner(CWallet *pwallet)
 
 				//Compute r_{i+1}
 				inputs = prefix + temp_signature.getHex();
-				r_i = PMC::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
+				r_i = PRM::computeR_i(pblock->ticket.pubkey, inputs, SUBSET_CONST, ALL_CONST);
 			}
           	        pblock->hashTicket = pblock->ticket.getHash();
 	                pblock->hashRewardSig = Hash(pblock->vsignreward.begin(),pblock->vsignreward.end());

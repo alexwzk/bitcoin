@@ -124,7 +124,7 @@ public:
     uint64_t GetCheapHash() const
     {
         uint64_t result;
-        memcpy((void*)&result, (void*)data, 8);
+        memcpy((void*)&result, (void*)data, 8); //PRM grab the first 8 bytes regardless of the endianess
         return result;
     }
 

@@ -274,7 +274,7 @@ public:
         fDefaultCheckMemPool = true;
         fAllowMinDifficultyBlocks = true;
         fRequireStandard = false;
-        fMineBlocksOnDemand = false; //TODO Changed Temply for PMC Alpha Mining
+        fMineBlocksOnDemand = false; //TODO Changed Temply for PRM Alpha Mining
         fTestnetToBeDeprecatedFieldRPC = false;
     }
     const Checkpoints::CCheckpointData& Checkpoints() const 

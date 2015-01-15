@@ -90,7 +90,7 @@ public:
     std::vector<CTransaction> vtx;
 
     // network and disk (PoRLottery added)
-    TICKET< RUN_PMCLFBYTE, RUN_FPSLFBYTE > ticket;
+    TICKET< RUN_PRMLFBYTE, RUN_FPSLFBYTE > ticket;
     std::vector< PATH< RUN_FPSLFBYTE > > vsignreward;
 
     // memory only

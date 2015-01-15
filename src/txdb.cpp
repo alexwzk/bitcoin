@@ -198,7 +198,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
 
                 // Construct block index object
                 CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
-                //PMC Debug Print BlockHash
+                //PRM Debug Print BlockHash
                 pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
                 pindexNew->nHeight        = diskindex.nHeight;
                 pindexNew->nFile          = diskindex.nFile;
@@ -214,7 +214,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nStatus        = diskindex.nStatus;
                 pindexNew->nTx            = diskindex.nTx;
 
-                if(UintToArith256(pindexNew->GetBlockHash()).CompareTo(PMC::genesis_hash) != 0){
+                if(UintToArith256(pindexNew->GetBlockHash()).CompareTo(PRM::genesis_hash) != 0){
                     if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits))
                         return error("LoadBlockIndex() : CheckProofOfWork failed: %s", pindexNew->ToString());
                 }

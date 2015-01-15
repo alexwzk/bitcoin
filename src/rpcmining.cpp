@@ -512,10 +512,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
             pblocktemplate = NULL;
         }
         CScript scriptDummy = CScript() << OP_TRUE;
-        //TODO PMC !!!! Crash here possible
+        //TODO PRM !!!! Crash here possible
     	FPS<RUN_FPSLFBYTE> signatures_pool(RUN_FPSLFNUM,RUN_FPSLFSELECT,RUN_FPSLFREVEAL);
     	std::vector< uint256 > reveal_seeds;
-    	std::vector<PATH <RUN_PMCLFBYTE> > inmemory_paths;
+    	std::vector<PATH <RUN_PRMLFBYTE> > inmemory_paths;
         pblocktemplate = CreateNewBlock(scriptDummy);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
