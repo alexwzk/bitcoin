@@ -511,7 +511,7 @@ void static BitcoinMiner(CWallet *pwallet)
 				temp_path = inmemory_paths.at(r_i);
 				LogPrintf("PRM r_i %d: %zu\n", i, r_i);
 				pblock->ticket.mkproofs.push_back(temp_path);
-				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().GetHex();
+				inputs = prefix + temp_signature.getHex() + pblock->ticket.mkproofs[i].returnLeaf().getHex();
 				hashvalue = Hash(inputs.begin(),inputs.end());
 
 				//Store signature
